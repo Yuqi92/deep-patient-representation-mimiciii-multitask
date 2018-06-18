@@ -10,8 +10,9 @@ Requirements:
 2. Tensorflow 1.5.0+
 
 Steps:
-1.python3 mimic_preprocessing.py
-2.nohup python3 build_data.py
+==> python3 mimic_preprocessing.py
+
+==> nohup python3 build_data.py
 
 
 Contact: Yuqi Si (Yuqi.Si@uth.tmc.edu)
