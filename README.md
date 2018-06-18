@@ -1,5 +1,6 @@
 # CNN_mimiciii_mortality_prediction
 Implementation of Neural Document Embeddings for Intensive Care Patient Mortality Prediction
+
 Dataset: mimic v1.4 NOTEEVENTS 
 Model: Two level Convolutional Neural Network
 
