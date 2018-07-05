@@ -5,17 +5,16 @@ import numpy as np
 import math
 from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
-from utility import  extract_embedding, generate_token_embedding, split_train_test_dev, CNN_model, evaluation
+from utility import  extract_embedding, generate_token_embedding, split_train_test_dev, CNN_model,generate_sent_category
 
 import logging
 logging.basicConfig(filename="example.log", level=logging.INFO)
 
-# truncated file to 1000 sentences
 
 
-# input file and note 
+# input file and note
 logging.info('build data:')
-data_folder_path = '../CNN_mimic_iii/file/truncated_files_with_category/'
+data_folder_path = '../CNN_mimic_iii/dead_in_month/file/truncated_files_with_category/'
 pos_path = data_folder_path + 'pos/'
 neg_path = data_folder_path + 'neg/'
 pos_files = glob.glob(pos_path + "*.txt")
@@ -23,8 +22,8 @@ neg_files = glob.glob(neg_path + "*.txt")
 
 # split train test dev
 logging.info('split_train_test_dev')
-load_path = '/home/ysi/PycharmProjects/CNN_mimic_iii/index/'
-train_file,test_file,dev_file,y_train,y_test,y_dev = split_train_test_dev(pos_files, neg_files, load_path, True)
+load_path = '.../dead_in_month/index/'
+train_file,test_file,dev_file,y_train,y_test,y_dev = split_train_test_dev(pos_files, neg_files, load_path, False)
 
 # generate mimic embedding
 logging.info('extract mimic')
@@ -59,7 +58,7 @@ saver = tf.train.Saver()
 with tf.Session() as sess:
     restore = False
     if restore:
-        saver.restore(sess, "results/model_probablity_dazhu_1/model.weights/model.ckpt")
+        saver.restore(sess, "dead_in_month/results/model_1/model.weights/model.ckpt")
     else:
         sess.run(tf.global_variables_initializer())
     shuf_ind = np.asarray(list(range(len(train_file))))
@@ -72,7 +71,7 @@ with tf.Session() as sess:
         y_train = y_train[shuf_ind]
         #lr_decay = 0.99
         #learning_rate = 0.001
-        
+
         # start train
         for i in tqdm(range(num_train_batch)):
             tmp_train_file_name_list = train_file[i*n_batch:min((i+1)*n_batch, len(train_file))]
@@ -96,8 +95,8 @@ with tf.Session() as sess:
                          category_index: cate_id,
                          dropout_keep_prob: 0.8
                      })
-        
-        
+
+
         # get validation result
         y_dev_label = []
         predictions_dev = []
@@ -121,7 +120,7 @@ with tf.Session() as sess:
 
             pre = sess.run(predictions,
                 feed_dict=
-                {input_x: tmp_x_dev, 
+                {input_x: tmp_x_dev,
                 input_y: tmp_y_dev,
                 sent_length: l,
                 category_index: cate_id,
@@ -136,7 +135,7 @@ with tf.Session() as sess:
         logging.info("Dev AUC: {}".format(auc))
 
         if auc > max_auc:
-            save_path = saver.save(sess,"results/model_probablity_dazhu_1/model.weights/model.ckpt")
+            save_path = saver.save(sess,"dead_in_month/results/model_1/model.weights/model.ckpt")
             logging.info("- new best score!")
             max_auc = auc
             current_early_stop_times = 0
@@ -179,4 +178,5 @@ with tf.Session() as sess:
 
     auc = roc_auc_score(np.asarray(y_test_label), np.asarray(predictions_test))
     logging.info("AUC: {}".format(auc))
+
 
