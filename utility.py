@@ -101,7 +101,7 @@ def generate_token_embedding(file_name,mimic3_embedding):
                 x_sentence.append(mimic3_embedding['UNK'])
         x_sentence = np.stack(x_sentence)
         x_sentence = np.pad(x_sentence, ((0, n_max_word_num - x_sentence.shape[0]), (0, 0)), "constant")
-     x_token.append(x_sentence)
+        x_token.append(x_sentence)
      x_token = np.stack(x_token)
      x_token = np.pad(x_token, ((0,n_max_sentence_num - x_token.shape[0]),(0,0),(0,0)), "constant")
      
