@@ -22,6 +22,7 @@ def extract_embedding(embedding_file):
 # extract and save sentence and category from each text file
 
 def generate_sent_category(file_name):
+    n_max_sentence_num = 1000
     def split_doc(d):
         d = d.strip().split(".") # split document by "." to sentences
         final_d = []
@@ -39,11 +40,11 @@ def generate_sent_category(file_name):
             line = line.strip()
             if line.startswith("****<<<<"):
                 if new_doc != "":
-                    tmp_split_doc = split_doc(new_doc) # all the sentences under this category are saved to a list 
+                    tmp_split_doc = split_doc(new_doc) # all the sentences under this category are saved to a list
                     tmp_sent_count = len(tmp_split_doc) # calculate how many sentences mean that how many categories have to generate
                     sentences += tmp_split_doc  # save the sentence list
                     categories += ([current_category] * tmp_sent_count)
-                    new_doc = "" 
+                    new_doc = ""
                 current_category = line[8:-8].strip()
             else:
                 new_doc += (" "+line)
@@ -53,9 +54,11 @@ def generate_sent_category(file_name):
             sentences += tmp_split_doc
             categories += ([current_category] * tmp_sent_count)
             new_doc = ""
+    sentences = sentences[:min(n_max_sentence_num, len(sentences))]
+    categories = categories[:min(n_max_sentence_num, len(sentences))]
     return sentences, categories
-    
-# tokenize    
+
+# tokenize
 def tokenize(text):
     tokenizer = re.compile('\w+|\*\*|[^\s\w]')
     return tokenizer.findall(text.lower())
@@ -73,22 +76,22 @@ def find_category_to_id(categories_per_file):
     for c in categories_per_file:
         categories_id_per_file.append(category_id[c])
     return categories_id_per_file
-    
+
 # generate x embedding from each file
 def generate_token_embedding(file_name,mimic3_embedding):
     n_max_sentence_num = 1000 # truncated to 1000 sentences a document
     n_max_word_num = 25 # truncated to 25 words a sentence
     sentences_per_file, categories_per_file = generate_sent_category(file_name)
-    
+
     # category id list
     categories_id_per_file = find_category_to_id(categories_per_file)
     number_of_sentences = len(sentences_per_file)
     categories_id_per_file = categories_id_per_file + [0]*(n_max_sentence_num-number_of_sentences) # padding zero to category id list
-    
+
     # x_token
     x_token = []
     for i, sent in enumerate(sentences_per_file):
-        x_sentence = [] 
+        x_sentence = []
         tokens = tokenize(sent)
         if len(tokens) == 0: # ignore empty token
             continue
@@ -102,28 +105,20 @@ def generate_token_embedding(file_name,mimic3_embedding):
         x_sentence = np.stack(x_sentence)
         x_sentence = np.pad(x_sentence, ((0, n_max_word_num - x_sentence.shape[0]), (0, 0)), "constant")
         x_token.append(x_sentence)
-     x_token = np.stack(x_token)
-     x_token = np.pad(x_token, ((0,n_max_sentence_num - x_token.shape[0]),(0,0),(0,0)), "constant")
-     
-     return x_token, number_of_sentences, categories_id_per_file
-     
-     
-# split train test dev
-def split_train_test_dev(pos_files, neg_files, load_path, load=False):
-    num_pos_files = len(pos_files)
-    num_neg_files = len(neg_files)
-    document_name_list = np.asarray(pos_files + neg_files)
-    label_list = np.asarray([[0, 1]] * num_pos_files + [[1, 0]] * num_neg_files)
+    x_token = np.stack(x_token)
+    x_token = np.pad(x_token, ((0,n_max_sentence_num - x_token.shape[0]),(0,0),(0,0)), "constant")
 
+    return x_token, number_of_sentences, categories_id_per_file
+
+
+# split train test dev
+def split_train_test_dev(index_list,load_path, load=False):
     if not load:
-        sample_size = num_neg_files + num_pos_files
-        index_list = np.asarray(list(range(sample_size)))
         np.random.shuffle(index_list)
-        n_dev = sample_size // 10
+        n_dev = len(index_list) // 10
         dev_index = index_list[:n_dev]
         test_index = index_list[n_dev:(2*n_dev)]
         train_index = index_list[(2*n_dev):]
-
         np.save(load_path + '/dev.npy', dev_index)
         np.save(load_path + '/test.npy', test_index)
         np.save(load_path + '/train.npy', train_index)
@@ -131,22 +126,20 @@ def split_train_test_dev(pos_files, neg_files, load_path, load=False):
         dev_index = np.load(load_path + "/dev.npy")
         train_index = np.load(load_path + "/train.npy")
         test_index = np.load(load_path + "/test.npy")
-    
-    dev_file_list = document_name_list[dev_index]
-    y_dev = label_list[dev_index]
-    
-    test_file_list = document_name_list[test_index]
-    y_test = label_list[test_index]
-    
-    train_file_list = document_name_list[train_index]
-    y_train = label_list[train_index]
+    return train_index,test_index,dev_index
 
-    return train_file_list,test_file_list,dev_file_list,y_train,y_test,y_dev
-    
-    
-    
+def generate_label_from_dead_date(y_series,dead_date):
+    label = []
+    for index,y in y_series.iteritems():
+        if y < dead_date:
+            label.append([0,1])
+        else:
+            label.append([1,0])
+    label = np.asarray(label)
+    return label
+
 # CNN model architecture
-def CNN_model(input_x,input_y, sent_length, category_index, dropout_keep_prob):
+def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
     # general config
     embedding_size = 100
     max_document_length = 1000
@@ -186,7 +179,7 @@ def CNN_model(input_x,input_y, sent_length, category_index, dropout_keep_prob):
             ) # shape: (n_batch*n_doc) * (n_seq - filter_size) * num_filters
             # Apply nonlinearity
             h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu") # shape not change
-           
+
             # Maxpooling over the outputs
             # another implementation of max-pool
             pooled = tf.reduce_max(h, axis=1) # (n_batch*n_doc) * n_filter
@@ -203,22 +196,26 @@ def CNN_model(input_x,input_y, sent_length, category_index, dropout_keep_prob):
     h_drop = tf.reshape(first_cnn_output,[-1, (num_filters_total+dim_category)]) # [(n_batch * n_doc), n_filter + dim_category]
 
 #do sentence loss with the matrix of the concat result of category & h_drop
-    W = tf.Variable(tf.truncated_normal([(num_filters_total+dim_category), num_classes], stddev=0.1), name="W")
-    b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
+    total_loss = 0
+    for (M,input_y) in enumerate(input_ys):
+        with tf.name_scope("task"+str(M)):
+            W = tf.Variable(tf.truncated_normal([(num_filters_total+dim_category), num_classes], stddev=0.1), name="W")
+            b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
 
-    scores_sentence = tf.nn.xw_plus_b(h_drop, W, b)
-    # scores has shape: [(n_batch * n_doc), num_classes]
+            scores_sentence = tf.nn.xw_plus_b(h_drop, W, b)
+            # scores has shape: [(n_batch * n_doc), num_classes]
 
-    # input_y: shape: [n_batch, num_classes]  have to transfer the same shape to scores
-    y = tf.tile(input_y, [1, max_document_length])  #y: shape [n_batch, (num_classes*n_doc)]
-    y = tf.reshape(y, [-1,num_classes]) #y: shape [(n_batch*n_doc), num_classes]
+            # input_y: shape: [n_batch, num_classes]  have to transfer the same shape to scores
+            y = tf.tile(input_y, [1, max_document_length])  #y: shape [n_batch, (num_classes*n_doc)]
+            y = tf.reshape(y, [-1,num_classes]) #y: shape [(n_batch*n_doc), num_classes]
 
-    sentence_losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores_sentence, labels=y)
-    # sentence losses has shape: [(n_batch * n_doc), ] it is a 1D vector.
-    sentence_losses = tf.reshape(sentence_losses, [-1, max_document_length]) # [n_batch, n_doc]
-    mask = tf.sequence_mask(sent_length)
-    sentence_losses = tf.boolean_mask(sentence_losses, mask)
-    sentence_losses_avg = tf.reduce_mean(sentence_losses)
+            sentence_losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores_sentence, labels=y)
+            # sentence losses has shape: [(n_batch * n_doc), ] it is a 1D vector.
+            sentence_losses = tf.reshape(sentence_losses, [-1, max_document_length]) # [n_batch, n_doc]
+            mask = tf.sequence_mask(sent_length)
+            sentence_losses = tf.boolean_mask(sentence_losses, mask)
+            sentence_losses_avg = tf.reduce_mean(sentence_losses)
+            total_loss += sentence_losses_avg * lambda_regularizer_strength
 
 #===========================================sentence-level CNN ==================================================================
     filter_shape = [document_filter_size, (num_filters_total + dim_category), document_num_filters]
@@ -238,30 +235,34 @@ def CNN_model(input_x,input_y, sent_length, category_index, dropout_keep_prob):
     with tf.name_scope("dropout"):
         pooled_second_drop = tf.nn.dropout(pooled_second, dropout_keep_prob)
 
-    W = tf.Variable(tf.truncated_normal([document_num_filters, num_classes], stddev=0.1), name="W")
-    b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
+    scores_soft_max_list = []
+    for (M,input_y) in enumerate(input_ys):
+        with tf.name_scope("task"+str(M)):
+            W = tf.Variable(tf.truncated_normal([document_num_filters, num_classes], stddev=0.1), name="W")
+            b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
 
-    scores = tf.nn.xw_plus_b(pooled_second_drop, W, b)
-    scores_soft_max = tf.nn.softmax(scores)  
-    # scores has shape: [n_batch, num_classes]
-    predictions = tf.argmax(scores, axis=1, name="predictions")
-    # predictions has shape: [None, ]. A shape of [x, ] means a vector of size x
-
-    losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=input_y)
-    # losses has shape: [None, ]
-
-    avg_loss = tf.reduce_mean(losses)
-    # include target replication
-    loss = avg_loss + lambda_regularizer_strength * sentence_losses_avg
-
+            scores = tf.nn.xw_plus_b(pooled_second_drop, W, b)
+            # scores has shape: [n_batch, num_classes]
+            scores_soft_max = tf.nn.softmax(scores)
+            scores_soft_max_list.append(scores_soft_max)  # scores_soft_max_list shape:[multi_size, n_batch, num_classes]
+            # predictions = tf.argmax(scores, axis=1, name="predictions")
+            # predictions has shape: [None, ]. A shape of [x, ] means a vector of size x
+            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=input_y)
+            # losses has shape: [None, ]
+            # include target replication
+            # total_loss += losses
+            loss_avg = tf.reduce_mean(losses)
+            total_loss += loss_avg
+    # avg_loss = tf.reduce_mean(total_loss)
     # optimize function
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-    optimize = optimizer.minimize(loss)
-    
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+    optimize = optimizer.minimize(total_loss)
+
+
     #correct_predictions = tf.equal(predictions, tf.argmax(input_y, 1))
     #accuracy = tf.reduce_sum(tf.cast(correct_predictions, "float"), name="accuracy")
 
-    return optimize, scores_soft_max
+    return optimize, scores_soft_max_list
 
 
 # evaluation
@@ -286,6 +287,3 @@ def evaluation(predictions, y_label):
     f1 = 2*precision*recall/(precision+recall)
     acc = (tp+tn)/(tp+tn+fp+fn)
     return acc
-    
-    
-   
