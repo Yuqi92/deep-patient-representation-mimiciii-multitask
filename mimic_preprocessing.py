@@ -19,17 +19,17 @@ for index, row in patient_note_label.iterrows():
     tmp_full_text = row['full_text']
     tmp_dead_after_disch_date = row["dead_after_disch_date"]
     tmp_patient_id = "patient" + str(index)
-    result.write(tmp_patient_id + "," + tmp_dead_after_disch_date + "\n")
+    result.write(tmp_patient_id + "," + str(tmp_dead_after_disch_date) + "\n")
     f = open(HP.data_directory + tmp_patient_id + '.txt', 'w')
     for x in row['full_text']:
-        category = x[0]
+        category = x[0].strip()
         category_index = HP.category_id[category]
         doc = x[1]
         sentences = split_doc(doc)
         for sent in sentences:
             cleaned_tokens = tokenize(sent, mimic3_embedding)
             if len(cleaned_tokens) > 0:
-                f.write(category_index + "\n")
+                f.write(str(category_index) + "\n")
                 for t in cleaned_tokens:
                     f.write(t + "\n")
                 f.write("\n")
