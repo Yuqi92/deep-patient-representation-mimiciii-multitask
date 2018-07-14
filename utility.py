@@ -32,6 +32,8 @@ def generate_token_embedding(pid, mimic3_embedding):
                 x_sentence = np.stack(x_sentence)
                 x_sentence = np.pad(x_sentence, ((0, HP.n_max_word_num - x_sentence.shape[0]), (0, 0)), "constant")
                 x_token.append(x_sentence)
+                if len(x_token) >= HP.n_max_sentence_num:
+                    break
             else:
                 logging.warning("Continues blank line in file: " + pid)
             # add something to x_token
@@ -41,7 +43,8 @@ def generate_token_embedding(pid, mimic3_embedding):
             waiting_for_new_sentence_flag = False
             x_sentence = []
         else:  # is new word line
-            x_sentence.append(mimic3_embedding[strip_line])
+            if len(x_sentence) < HP.n_max_word_num:
+                x_sentence.append(mimic3_embedding[strip_line])
     if not waiting_for_new_sentence_flag:
         logging.warning("Do not find new line at the bottom of the file: " + pid + ". Which will cause one ignored sent")
     x_token = np.stack(x_token)
