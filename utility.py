@@ -1,226 +1,162 @@
-import re
 import tensorflow as tf
 import numpy as np
+import HP
+from sklearn.metrics import roc_auc_score
+import logging
 
-# generate category id
-category = ['pad','Respiratory','ECG','Radiology','Nursing/other','Rehab Services','Nutrition','Pharmacy','Social Work',
-            'Case Management','Physician','General','Nursing','Echo','Consult']
-
-category_id = {cate: idx for idx, cate in enumerate(category)}
+logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
 
 # generate pre-trained embedding
-def extract_embedding(embedding_file):
+def get_embedding():
+    embedding_file = open(HP.embedding_file)
     embedding_map = {}
     for line in embedding_file:
         values = line.split()
         word = values[0]
-        coef = np.asarray(values[1:], dtype = 'float32')
+        coef = np.asarray(values[1:], dtype='float32')
         embedding_map[word] = coef
     embedding_file.close()
     return embedding_map
 
-# extract and save sentence and category from each text file
 
-def generate_sent_category(file_name):
-    n_max_sentence_num = 1000
-    def split_doc(d):
-        d = d.strip().split(".") # split document by "." to sentences
-        final_d = []
-        for s in d:
-            if s != "":  # ignore if the sentence is empty
-                final_d.append(s.strip())
-        return final_d  # Now the sentences are splitted from documents and saved to a list
-
-    with open(file_name,'r') as f:
-        sentences = []
-        categories = []
-        current_category = ""
-        new_doc = ""
-        for line in f:
-            line = line.strip()
-            if line.startswith("****<<<<"):
-                if new_doc != "":
-                    tmp_split_doc = split_doc(new_doc) # all the sentences under this category are saved to a list
-                    tmp_sent_count = len(tmp_split_doc) # calculate how many sentences mean that how many categories have to generate
-                    sentences += tmp_split_doc  # save the sentence list
-                    categories += ([current_category] * tmp_sent_count)
-                    new_doc = ""
-                current_category = line[8:-8].strip()
-            else:
-                new_doc += (" "+line)
-        if new_doc != "": # notes under the last category
-            tmp_split_doc = split_doc(new_doc)
-            tmp_sent_count = len(tmp_split_doc)
-            sentences += tmp_split_doc
-            categories += ([current_category] * tmp_sent_count)
-            new_doc = ""
-    sentences = sentences[:min(n_max_sentence_num, len(sentences))]
-    categories = categories[:min(n_max_sentence_num, len(sentences))]
-    return sentences, categories
-
-# tokenize
-def tokenize(text):
-    tokenizer = re.compile('\w+|\*\*|[^\s\w]')
-    return tokenizer.findall(text.lower())
-# clean digits: 698 => 600
-def clean_token(s):
-    if len(s) > 1:
-        if s.isdigit():
-            l = len(s)
-            s = str(int(s)//(10**(l-1)) * 10**(l-1))
-    return s.lower()
-
-# transfer category into index
-def find_category_to_id(categories_per_file):
+def generate_token_embedding(pid, mimic3_embedding):
+    x_token = []  # n_sent * n_word * n_embed
+    f = open(HP.data_directory + pid + '.txt')
     categories_id_per_file = []
-    for c in categories_per_file:
-        categories_id_per_file.append(category_id[c])
-    return categories_id_per_file
-
-# generate x embedding from each file
-def generate_token_embedding(file_name,mimic3_embedding):
-    n_max_sentence_num = 1000 # truncated to 1000 sentences a document
-    n_max_word_num = 25 # truncated to 25 words a sentence
-    sentences_per_file, categories_per_file = generate_sent_category(file_name)
-
-    # category id list
-    categories_id_per_file = find_category_to_id(categories_per_file)
-    number_of_sentences = len(sentences_per_file)
-    categories_id_per_file = categories_id_per_file + [0]*(n_max_sentence_num-number_of_sentences) # padding zero to category id list
-
-    # x_token
-    x_token = []
-    for i, sent in enumerate(sentences_per_file):
-        x_sentence = []
-        tokens = tokenize(sent)
-        if len(tokens) == 0: # ignore empty token
-            continue
-        tokens_truncated = tokens[:min(n_max_word_num, len(tokens))]
-        for j, tok in enumerate(tokens_truncated):
-            tok = clean_token(tok)
-            if tok in mimic3_embedding:
-                x_sentence.append(mimic3_embedding[tok])
+    waiting_for_new_sentence_flag = True
+    for line in f:
+        strip_line = line.strip()
+        if len(strip_line) == 0:
+            waiting_for_new_sentence_flag = True
+            if len(x_sentence) > 0:
+                x_sentence = np.stack(x_sentence)
+                x_sentence = np.pad(x_sentence, ((0, HP.n_max_word_num - x_sentence.shape[0]), (0, 0)), "constant")
+                x_token.append(x_sentence)
             else:
-                x_sentence.append(mimic3_embedding['UNK'])
-        x_sentence = np.stack(x_sentence)
-        x_sentence = np.pad(x_sentence, ((0, n_max_word_num - x_sentence.shape[0]), (0, 0)), "constant")
-        x_token.append(x_sentence)
+                logging.warning("Continues blank line in file: " + pid)
+            # add something to x_token
+            continue
+        if waiting_for_new_sentence_flag:  # is new category line
+            categories_id_per_file.append(int(strip_line))
+            waiting_for_new_sentence_flag = False
+            x_sentence = []
+        else:  # is new word line
+            x_sentence.append(mimic3_embedding[strip_line])
+    if not waiting_for_new_sentence_flag:
+        logging.warning("Do not find new line at the bottom of the file: " + pid + ". Which will cause one ignored sent")
     x_token = np.stack(x_token)
-    x_token = np.pad(x_token, ((0,n_max_sentence_num - x_token.shape[0]),(0,0),(0,0)), "constant")
-
+    x_token = np.pad(x_token, ((0, HP.n_max_sentence_num - x_token.shape[0]), (0, 0), (0, 0)), "constant")
+    f.close()
+    number_of_sentences = len(categories_id_per_file)
+    categories_id_per_file = categories_id_per_file + [0]*(HP.n_max_sentence_num-number_of_sentences)
     return x_token, number_of_sentences, categories_id_per_file
 
 
 # split train test dev
-def split_train_test_dev(index_list,load_path, load=False):
-    if not load:
+def split_train_test_dev(n_patient):
+    if not HP.load_index:
+        index_list = np.arange(n_patient)
         np.random.shuffle(index_list)
         n_dev = len(index_list) // 10
         dev_index = index_list[:n_dev]
         test_index = index_list[n_dev:(2*n_dev)]
         train_index = index_list[(2*n_dev):]
-        np.save(load_path + '/dev.npy', dev_index)
-        np.save(load_path + '/test.npy', test_index)
-        np.save(load_path + '/train.npy', train_index)
+        np.save(HP.index_dev_path, dev_index)
+        np.save(HP.index_test_path, test_index)
+        np.save(HP.index_train_path, train_index)
     else:
-        dev_index = np.load(load_path + "/dev.npy")
-        train_index = np.load(load_path + "/train.npy")
-        test_index = np.load(load_path + "/test.npy")
-    return train_index,test_index,dev_index
+        dev_index = np.load(HP.index_dev_path)
+        train_index = np.load(HP.index_train_path)
+        test_index = np.load(HP.index_test_path)
+    return train_index, test_index, dev_index
 
-def generate_label_from_dead_date(y_series,dead_date):
-    label = []
-    for index,y in y_series.iteritems():
-        if y < dead_date:
-            label.append([0,1])
-        else:
-            label.append([1,0])
-    label = np.asarray(label)
-    return label
+
+def generate_label_from_dead_date(y_series):
+    labels = []
+    for dead_date in HP.tasks_dead_date:
+        label = []
+        for index, y in y_series.iteritems():
+            if y < dead_date:
+                label.append([0, 1])
+            else:
+                label.append([1, 0])
+        label = np.asarray(label)
+        labels.append(label)
+    return labels
+
 
 # CNN model architecture
 def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
-    # general config
-    embedding_size = 100
-    max_document_length = 1000
-    max_sentence_length = 25
-    filter_sizes = (3, 4, 5)
-    num_filters = 50
-    n_category = 15
-    dim_category = 10
-    document_filter_size = 3
-    document_num_filters = 50
-
-    num_classes = 2
-    lambda_regularizer_strength = 5
-
     # category lookup
     target_embeddings = tf.get_variable(
                         name="target_embeddings",
                         dtype=tf.float32,
-                        shape=[n_category, dim_category])
+                        shape=[HP.n_category, HP.dim_category])
     embedded_category = tf.nn.embedding_lookup(target_embeddings,
-                        category_index, name="target_embeddings") # [n_batch, n_doc,dim_category]
+                                               category_index,
+                                               name="target_embeddings")  # [n_batch, n_doc,dim_category]
 
     # =============================== reshape to do word level CNN ============================================================================
-    x = tf.reshape(input_x, [-1, max_sentence_length, embedding_size])
+    x = tf.reshape(input_x, [-1, HP.max_sentence_length, HP.embedding_size])
     pooled_outputs = []
-    for i, filter_size in enumerate(filter_sizes):
+    for i, filter_size in enumerate(HP.filter_sizes):
         with tf.name_scope("conv-maxpool-%s" % filter_size):
             # Convolution Layer
-            filter_shape = [filter_size, embedding_size, num_filters]
+            filter_shape = [filter_size, HP.embedding_size, HP.num_filters]
             W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-            b = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b")
+            b = tf.Variable(tf.constant(0.1, shape=[HP.num_filters]), name="b")
             conv = tf.nn.conv1d(
                 value=x,
                 filters=W,
                 stride=1,
                 padding="VALID"
-            ) # shape: (n_batch*n_doc) * (n_seq - filter_size) * num_filters
+            )  # shape: (n_batch*n_doc) * (n_seq - filter_size) * num_filters
             # Apply nonlinearity
-            h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu") # shape not change
+            h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")  # shape not change
 
             # Maxpooling over the outputs
             # another implementation of max-pool
-            pooled = tf.reduce_max(h, axis=1) # (n_batch*n_doc) * n_filter
-            pooled_outputs.append(pooled) # three list of pooled array
+            pooled = tf.reduce_max(h, axis=1)  # (n_batch*n_doc) * n_filter
+            pooled_outputs.append(pooled)  # three list of pooled array
     # Combine all the pooled features
-    num_filters_total = num_filters * len(filter_sizes)
-    h_pool = tf.concat(pooled_outputs, 1) # shape: (n_batch*n_doc) * num_filters_total
+    num_filters_total = HP.num_filters * len(HP.filter_sizes)
+    h_pool = tf.concat(pooled_outputs, 1)  # shape: (n_batch*n_doc) * num_filters_total
     # Add dropout
     with tf.name_scope("dropout"):
-        h_drop = tf.nn.dropout(h_pool, dropout_keep_prob) # (n_batch * n_doc) * num_filters_total
+        h_drop = tf.nn.dropout(h_pool, dropout_keep_prob)  # (n_batch * n_doc) * num_filters_total
 
-    first_cnn_output = tf.reshape(h_drop, [-1, max_document_length, num_filters_total]) # [n_batch, n_doc, n_filter]
-    first_cnn_output = tf.concat([first_cnn_output, embedded_category], axis=2) # [n_batch, n_doc, n_filter + dim_category]
-    h_drop = tf.reshape(first_cnn_output,[-1, (num_filters_total+dim_category)]) # [(n_batch * n_doc), n_filter + dim_category]
+    first_cnn_output = tf.reshape(h_drop, [-1, HP.max_document_length, num_filters_total])  # [n_batch, n_doc, n_filter]
+    first_cnn_output = tf.concat([first_cnn_output, embedded_category], axis=2)  # [n_batch, n_doc, n_filter + dim_category]
+    h_drop = tf.reshape(first_cnn_output,[-1, (num_filters_total+HP.dim_category)])  # [(n_batch * n_doc), n_filter + dim_category]
 
-#do sentence loss with the matrix of the concat result of category & h_drop
+# do sentence loss with the matrix of the concat result of category & h_drop
     total_loss = 0
-    for (M,input_y) in enumerate(input_ys):
+    for (M, input_y) in enumerate(input_ys):
         with tf.name_scope("task"+str(M)):
-            W = tf.Variable(tf.truncated_normal([(num_filters_total+dim_category), num_classes], stddev=0.1), name="W")
-            b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
+            W = tf.Variable(tf.truncated_normal(
+                [(num_filters_total+HP.dim_category), HP.num_classes], stddev=0.1),
+                name="W")
+            b = tf.Variable(tf.constant(0.1, shape=[HP.num_classes]), name="b")
 
             scores_sentence = tf.nn.xw_plus_b(h_drop, W, b)
             # scores has shape: [(n_batch * n_doc), num_classes]
 
             # input_y: shape: [n_batch, num_classes]  have to transfer the same shape to scores
-            y = tf.tile(input_y, [1, max_document_length])  #y: shape [n_batch, (num_classes*n_doc)]
-            y = tf.reshape(y, [-1,num_classes]) #y: shape [(n_batch*n_doc), num_classes]
+            y = tf.tile(input_y, [1, HP.max_document_length])  # y: shape [n_batch, (num_classes*n_doc)]
+            y = tf.reshape(y, [-1, HP.num_classes])  # y: shape [(n_batch*n_doc), num_classes]
 
             sentence_losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores_sentence, labels=y)
             # sentence losses has shape: [(n_batch * n_doc), ] it is a 1D vector.
-            sentence_losses = tf.reshape(sentence_losses, [-1, max_document_length]) # [n_batch, n_doc]
+            sentence_losses = tf.reshape(sentence_losses, [-1, HP.max_document_length]) # [n_batch, n_doc]
             mask = tf.sequence_mask(sent_length)
             sentence_losses = tf.boolean_mask(sentence_losses, mask)
             sentence_losses_avg = tf.reduce_mean(sentence_losses)
-            total_loss += sentence_losses_avg * lambda_regularizer_strength
+            total_loss += sentence_losses_avg * HP.lambda_regularizer_strength
 
-#===========================================sentence-level CNN ==================================================================
-    filter_shape = [document_filter_size, (num_filters_total + dim_category), document_num_filters]
+# ===========================================sentence-level CNN ==================================================================
+    filter_shape = [HP.document_filter_size, (num_filters_total + HP.dim_category), HP.document_num_filters]
     W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-    b = tf.Variable(tf.constant(0.1, shape=[document_num_filters]), name="b")
+    b = tf.Variable(tf.constant(0.1, shape=[HP.document_num_filters]), name="b")
     conv = tf.nn.conv1d(
         value=first_cnn_output,
         filters=W,
@@ -231,15 +167,15 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
     h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
     # Maxpooling over the outputs
     # another implementation of max-pool
-    pooled_second = tf.reduce_max(h, axis=1) # n_batch * document_num_filters
+    pooled_second = tf.reduce_max(h, axis=1)  # n_batch * document_num_filters
     with tf.name_scope("dropout"):
         pooled_second_drop = tf.nn.dropout(pooled_second, dropout_keep_prob)
 
     scores_soft_max_list = []
     for (M,input_y) in enumerate(input_ys):
         with tf.name_scope("task"+str(M)):
-            W = tf.Variable(tf.truncated_normal([document_num_filters, num_classes], stddev=0.1), name="W")
-            b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
+            W = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.num_classes], stddev=0.1), name="W")
+            b = tf.Variable(tf.constant(0.1, shape=[HP.num_classes]), name="b")
 
             scores = tf.nn.xw_plus_b(pooled_second_drop, W, b)
             # scores has shape: [n_batch, num_classes]
@@ -255,35 +191,44 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
             total_loss += loss_avg
     # avg_loss = tf.reduce_mean(total_loss)
     # optimize function
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+    optimizer = tf.train.AdamOptimizer(learning_rate=HP.learning_rate)
     optimize = optimizer.minimize(total_loss)
-
-
-    #correct_predictions = tf.equal(predictions, tf.argmax(input_y, 1))
-    #accuracy = tf.reduce_sum(tf.cast(correct_predictions, "float"), name="accuracy")
+    scores_soft_max_list = tf.stack(scores_soft_max_list, axis=0)
+    # correct_predictions = tf.equal(predictions, tf.argmax(input_y, 1))
+    # accuracy = tf.reduce_sum(tf.cast(correct_predictions, "float"), name="accuracy")
 
     return optimize, scores_soft_max_list
 
 
-# evaluation
+def test_dev_auc(num_batch, y_task, patient_name, n, sess,
+                 mimic3_embedding,
+                 input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list):
+    y_label = []
+    predictions = []
+    for i in range(num_batch):
+        tmp_patient_name = patient_name[i*HP.n_batch:min((i+1)*HP.n_batch, n)]
+        for t in y_task:
+            tmp_y_task = t[i*HP.n_batch:min((i+1)*HP.n_batch, n)]
+            y_label.extend(np.argmax(tmp_y_task, axis=1).tolist())
 
-def evaluation(predictions, y_label):
-    tp = 0
-    tn = 0
-    fp = 0
-    fn = 0
-
-    for i in range(len(y_label)):
-        if predictions[i]==y_label[i]== 1:
-            tp += 1
-        if predictions[i]==y_label[i]== 0:
-            tn += 1
-        if predictions[i]== 1 and y_label[i] == 0:
-            fp += 1
-        if predictions[i] == 0 and y_label[i] == 1:
-            fn += 1
-    precision = tp/(tp+fp)
-    recall = tp/(tp+fn)
-    f1 = 2*precision*recall/(precision+recall)
-    acc = (tp+tn)/(tp+tn+fp+fn)
-    return acc
+        tmp_x = []
+        l = []
+        tmp_cate = []
+        for pid in tmp_patient_name:
+            new_x, new_l, new_cate = generate_token_embedding(pid, mimic3_embedding)
+            tmp_x.append(new_x)
+            l.append(new_l)
+            tmp_cate.append(new_cate)
+        tmp_x = np.stack(tmp_x)
+        cate_id = np.stack(tmp_cate)
+        l = np.asarray(l)
+        feed_dict = {input_x: tmp_x,
+                     sent_length: l,
+                     category_index: cate_id,
+                     dropout_keep_prob: 1.0}
+        pre = sess.run(scores_soft_max_list, feed_dict=feed_dict)  # [3,n_batch,2]
+        pre = pre.reshape(-1, HP.n_class)  # [3*n_batch,2]  in one batch: task1+task2+task3
+        pre = pre[:, 1]  # get probability of positive class
+        predictions.extend(pre.tolist())   # task1,2,3_batch1 + task1,2,3_batch2+ task1,2,3_batch3....
+    auc = roc_auc_score(np.asarray(y_label), np.asarray(predictions))
+    return auc
