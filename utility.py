@@ -9,7 +9,10 @@ logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
 
 
 def generate_token_embedding(pid):
-    x_token = []  # n_sent * n_word * n_embed
+    x_doc = np.zeros([HP.n_max_sentence_num,
+                      HP.n_max_word_num,
+                      HP.embedding_size], dtype=np.float32)
+    current_sentence_ind = 0
     f = open(HP.data_directory + pid + '.txt')
     categories_id_per_file = []
     waiting_for_new_sentence_flag = True
@@ -17,11 +20,9 @@ def generate_token_embedding(pid):
         strip_line = line.strip()
         if len(strip_line) == 0:
             waiting_for_new_sentence_flag = True
-            if len(x_sentence) > 0:
-                x_sentence = np.stack(x_sentence)
-                x_sentence = np.pad(x_sentence, ((0, HP.n_max_word_num - x_sentence.shape[0]), (0, 0)), "constant")
-                x_token.append(x_sentence)
-                if len(x_token) >= HP.n_max_sentence_num:
+            if current_word_ind > 0:
+                current_sentence_ind += 1
+                if current_sentence_ind >= HP.n_max_sentence_num:
                     break
             else:
                 logging.warning("Continues blank line in file: " + pid)
@@ -30,18 +31,19 @@ def generate_token_embedding(pid):
         if waiting_for_new_sentence_flag:  # is new category line
             categories_id_per_file.append(int(strip_line))
             waiting_for_new_sentence_flag = False
-            x_sentence = []
+            # x_sentence = np.zeros([HP.n_max_word_num,
+            #                       HP.embedding_size], dtype=np.float32)
+            current_word_ind = 0
         else:  # is new word line
-            if len(x_sentence) < HP.n_max_word_num:
-                x_sentence.append(Embedding.get_embedding()[strip_line])
+            if current_word_ind < HP.n_max_word_num:
+                x_doc[current_sentence_ind][current_word_ind] = Embedding.get_embedding()[strip_line]
+                current_word_ind += 1
     if not waiting_for_new_sentence_flag:
         logging.warning("Do not find new line at the bottom of the file: " + pid + ". Which will cause one ignored sent")
-    x_token = np.stack(x_token)
-    x_token = np.pad(x_token, ((0, HP.n_max_sentence_num - x_token.shape[0]), (0, 0), (0, 0)), "constant")
     f.close()
     number_of_sentences = len(categories_id_per_file)
     categories_id_per_file = categories_id_per_file + [0]*(HP.n_max_sentence_num-number_of_sentences)
-    return x_token, number_of_sentences, categories_id_per_file
+    return x_doc, number_of_sentences, categories_id_per_file
 
 
 # split train test dev

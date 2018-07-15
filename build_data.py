@@ -89,15 +89,17 @@ with tf.Session() as sess:
             pool.close()
             pool.join()
 
-            tmp_x_train = []
+            tmp_x_train = np.zeros([len(generate_token_embedding_results),
+                                    HP.n_max_sentence_num,
+                                    HP.n_max_word_num,
+                                    HP.embedding_size], dtype=np.float32)
             l = []
             tmp_cate = []
-            for r in generate_token_embedding_results:
-                tmp_x_train.append(r[0])
+            for (M, r) in enumerate(generate_token_embedding_results):
+                tmp_x_train[M] = r[0]
                 l.append(r[1])
                 tmp_cate.append(r[2])
 
-            tmp_x_train = np.stack(tmp_x_train)
             cate_id = np.stack(tmp_cate)
             l = np.asarray(l)
             feed_dict = {input_x: tmp_x_train,
