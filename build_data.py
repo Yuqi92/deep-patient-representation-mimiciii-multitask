@@ -10,7 +10,7 @@ import HP
 
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
 
-result_csv = pd.read_csv(HP.result_csv, "r")
+result_csv = pd.read_csv(HP.result_csv)
 
 # split train test dev
 logging.info('split_train_test_dev')
@@ -75,6 +75,7 @@ with tf.Session() as sess:
 
         # start train
         for i in tqdm(range(num_train_batch)):
+            # logging.info("start new batch")
             tmp_train_patient_name = train_patient_name[i*HP.n_batch:min((i+1)*HP.n_batch, n_train)]
             tmp_y_train = []
             for t in y_train_task:
@@ -97,6 +98,7 @@ with tf.Session() as sess:
                          dropout_keep_prob: 0.8}
             for (M, input_y) in enumerate(input_ys):
                 feed_dict[input_y] = tmp_y_train[M]
+            # logging.info("start to train")
             sess.run([optimize], feed_dict=feed_dict)
 
         # get validation result
