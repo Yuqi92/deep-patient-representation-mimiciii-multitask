@@ -3,11 +3,14 @@ import numpy as np
 import pandas as pd
 import math
 from tqdm import tqdm
-from utility import get_embedding, generate_token_embedding, split_train_test_dev, CNN_model,\
+from utility import generate_token_embedding, split_train_test_dev, CNN_model,\
     generate_label_from_dead_date, test_dev_auc
 import logging
 import HP
 from multiprocessing import Pool
+from Embedding import Embedding
+
+_ = Embedding.get_embedding()
 
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
 
@@ -35,7 +38,6 @@ logging.info('get files')
 
 # generate mimic embedding
 logging.info('extract mimic')
-mimic3_embedding = get_embedding()
 
 # train CNN model
 num_train_batch = int(math.ceil(len(train_patient_name) / HP.n_batch))
@@ -109,7 +111,6 @@ with tf.Session() as sess:
 
         # get validation result
         dev_auc = test_dev_auc(num_dev_batch, y_dev_task, dev_patient_name, n_dev, sess,
-                               mimic3_embedding,
                                input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list)
         logging.info("Dev AUC: {}".format(dev_auc))
 
@@ -125,6 +126,5 @@ with tf.Session() as sess:
             break
 
     test_auc = test_dev_auc(num_test_batch, y_test_task, test_patient_name, n_test, sess,
-                            mimic3_embedding,
                             input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list)
     logging.info("Dev AUC: {}".format(test_auc))

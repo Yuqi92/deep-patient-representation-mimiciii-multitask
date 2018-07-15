@@ -2,7 +2,7 @@
 import pandas as pd
 import HP
 from preprocess_utilities import preprocess, split_doc, tokenize
-from utility import get_embedding
+from Embedding import Embedding
 
 df_note = pd.read_csv(HP.mimic_note_events)
 admission = pd.read_csv(HP.mimic_admissions)
@@ -10,7 +10,7 @@ patient = pd.read_csv(HP.mimic_patients)
 
 patient_note_label = preprocess(df_note, admission, patient)
 
-mimic3_embedding = get_embedding()
+mimic3_embedding = Embedding.get_embedding()
 
 # extract text file for prediction model
 result = open(HP.result_csv, "w")

@@ -3,23 +3,12 @@ import numpy as np
 import HP
 from sklearn.metrics import roc_auc_score
 import logging
+from Embedding import Embedding
 
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
 
-# generate pre-trained embedding
-def get_embedding():
-    embedding_file = open(HP.embedding_file)
-    embedding_map = {}
-    for line in embedding_file:
-        values = line.split()
-        word = values[0]
-        coef = np.asarray(values[1:], dtype='float32')
-        embedding_map[word] = coef
-    embedding_file.close()
-    return embedding_map
 
-
-def generate_token_embedding(pid, mimic3_embedding):
+def generate_token_embedding(pid):
     x_token = []  # n_sent * n_word * n_embed
     f = open(HP.data_directory + pid + '.txt')
     categories_id_per_file = []
@@ -44,7 +33,7 @@ def generate_token_embedding(pid, mimic3_embedding):
             x_sentence = []
         else:  # is new word line
             if len(x_sentence) < HP.n_max_word_num:
-                x_sentence.append(mimic3_embedding[strip_line])
+                x_sentence.append(Embedding.get_embedding()[strip_line])
     if not waiting_for_new_sentence_flag:
         logging.warning("Do not find new line at the bottom of the file: " + pid + ". Which will cause one ignored sent")
     x_token = np.stack(x_token)
@@ -204,7 +193,6 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
 
 
 def test_dev_auc(num_batch, y_task, patient_name, n, sess,
-                 mimic3_embedding,
                  input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list):
     y_label = []
     predictions = []
@@ -218,7 +206,7 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
         l = []
         tmp_cate = []
         for pid in tmp_patient_name:
-            new_x, new_l, new_cate = generate_token_embedding(pid, mimic3_embedding)
+            new_x, new_l, new_cate = generate_token_embedding(pid)
             tmp_x.append(new_x)
             l.append(new_l)
             tmp_cate.append(new_cate)
