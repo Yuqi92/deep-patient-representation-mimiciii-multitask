@@ -7,6 +7,7 @@ from utility import get_embedding, generate_token_embedding, split_train_test_de
     generate_label_from_dead_date, test_dev_auc
 import logging
 import HP
+from multiprocessing import Pool
 
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
 
@@ -81,14 +82,19 @@ with tf.Session() as sess:
             for t in y_train_task:
                 tmp_y_train.append(t[i*HP.n_batch:min((i+1)*HP.n_batch, n_train)])
 
+            pool = Pool(processes=HP.read_data_thread_num)
+            generate_token_embedding_results = pool.map(generate_token_embedding, tmp_train_patient_name)
+            pool.close()
+            pool.join()
+
             tmp_x_train = []
             l = []
             tmp_cate = []
-            for pid in tmp_train_patient_name:
-                new_x_train, new_l, new_cate = generate_token_embedding(pid, mimic3_embedding)
-                tmp_x_train.append(new_x_train)
-                l.append(new_l)
-                tmp_cate.append(new_cate)
+            for r in generate_token_embedding_results:
+                tmp_x_train.append(r[0])
+                l.append(r[1])
+                tmp_cate.append(r[2])
+
             tmp_x_train = np.stack(tmp_x_train)
             cate_id = np.stack(tmp_cate)
             l = np.asarray(l)

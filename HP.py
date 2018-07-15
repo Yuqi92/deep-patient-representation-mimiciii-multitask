@@ -10,8 +10,8 @@ index_path = 'multi_task/index'
 index_train_path = index_path + '/train.npy'
 index_dev_path = index_path + '/dev.npy'
 index_test_path = index_path + '/test.npy'
-load_index = False
-
+load_index = True
+read_data_thread_num = 8
 
 embedding_file = '/home/ysi/Documents/amia/cancer_ner_relation_v1/data/glove.6B/mimic.k100.w2v'
 
@@ -28,7 +28,7 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 tasks_dead_date = [0, 31, 366]
 
 # model
-restore = False
+restore = True
 multi_size = len(tasks_dead_date)
 embedding_size = 100
 max_document_length = 1000
