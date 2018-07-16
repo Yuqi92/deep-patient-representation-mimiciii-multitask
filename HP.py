@@ -35,14 +35,14 @@ max_document_length = 1000
 max_sentence_length = 25
 n_class = 2
 n_batch = 64
-early_stop_times = 5
+early_stop_times = 1
 filter_sizes = (3, 4, 5)
 num_filters = 50
 n_category = len(category)
 dim_category = 10
 document_filter_size = 3
 document_num_filters = 50
-learning_rate = 0.01
+learning_rate = 0.0001
 
 num_classes = 2
 lambda_regularizer_strength = 5

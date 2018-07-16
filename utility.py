@@ -196,13 +196,24 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
 
 def test_dev_auc(num_batch, y_task, patient_name, n, sess,
                  input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list):
-    y_label = []
+    y_total_task_label = []
     predictions = []
+
+    seperate_pre = {}
+    y_seperate_task_label = {}
+    auc_per_task = {}
+    for m in range(HP.multi_size):
+        seperate_pre[m] = []
+        y_seperate_task_label[m] = []
+
     for i in range(num_batch):
         tmp_patient_name = patient_name[i*HP.n_batch:min((i+1)*HP.n_batch, n)]
-        for t in y_task:
-            tmp_y_task = t[i*HP.n_batch:min((i+1)*HP.n_batch, n)]
-            y_label.extend(np.argmax(tmp_y_task, axis=1).tolist())
+        for (y_i,y) in enumerate(y_task):
+            tmp_y_task = y[i*HP.n_batch:min((i+1)*HP.n_batch, n)]
+            # get the total true label
+            y_total_task_label.extend(np.argmax(tmp_y_task, axis=1).tolist())  # order task1 task2 _batch1  task1 task2 _batch2....
+            # get the seperate true label for each task
+            y_seperate_task_label[y_i].extend(np.argmax(tmp_y_task, axis=1).tolist()) # for each task: order : num_batch....
 
         tmp_x = []
         l = []
@@ -220,8 +231,19 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
                      category_index: cate_id,
                      dropout_keep_prob: 1.0}
         pre = sess.run(scores_soft_max_list, feed_dict=feed_dict)  # [3,n_batch,2]
+        # slice the 3D array to get each on the first dimensional
+        # get the seperate predictions for each task
+        for m in range(HP.multi_size):
+            pre_slice = pre[m, :]
+            pre_pos = pre_slice[:, 1]
+            seperate_pre[m].extend(pre_pos.tolist()) 
+
+        # get the total predictions for all
         pre = pre.reshape(-1, HP.n_class)  # [3*n_batch,2]  in one batch: task1+task2+task3
         pre = pre[:, 1]  # get probability of positive class
         predictions.extend(pre.tolist())   # task1,2,3_batch1 + task1,2,3_batch2+ task1,2,3_batch3....
-    auc = roc_auc_score(np.asarray(y_label), np.asarray(predictions))
-    return auc
+    auc = roc_auc_score(np.asarray(y_total_task_label), np.asarray(predictions))
+
+    for m in range(HP.multi_size):
+        auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
+    return auc, auc_per_task

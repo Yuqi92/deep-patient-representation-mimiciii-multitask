@@ -39,10 +39,14 @@ logging.info('get files')
 # generate mimic embedding
 logging.info('extract mimic')
 
+n_train = len(train_patient_name)
+n_dev = len(dev_patient_name)
+n_test = len(test_patient_name)
+
 # train CNN model
-num_train_batch = int(math.ceil(len(train_patient_name) / HP.n_batch))
-num_dev_batch = int(math.ceil(len(dev_patient_name) / HP.n_batch))
-num_test_batch = int(math.ceil(len(test_patient_name) / HP.n_batch))
+num_train_batch = int(math.ceil(n_train / HP.n_batch))
+num_dev_batch = int(math.ceil(n_dev / HP.n_batch))
+num_test_batch = int(math.ceil(n_test / HP.n_batch))
 
 # define placeholders
 input_x = tf.placeholder(tf.float32,
@@ -63,14 +67,12 @@ with tf.Session() as sess:
         saver.restore(sess, HP.model_path)
     else:
         sess.run(tf.global_variables_initializer())
-    n_train = len(train_patient_name)
-    n_dev = len(dev_patient_name)
-    n_test = len(test_patient_name)
+    
     shuf_train_ind = np.arange(n_train)
     max_auc = 0
     current_early_stop_times = 0
 
-    while True:
+    while False:
         np.random.shuffle(shuf_train_ind)
         train_patient_name = train_patient_name[shuf_train_ind]
         for i in range(len(y_train_task)):
@@ -112,7 +114,7 @@ with tf.Session() as sess:
             sess.run([optimize], feed_dict=feed_dict)
 
         # get validation result
-        dev_auc = test_dev_auc(num_dev_batch, y_dev_task, dev_patient_name, n_dev, sess,
+        dev_auc,_ = test_dev_auc(num_dev_batch, y_dev_task, dev_patient_name, n_dev, sess,
                                input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list)
         logging.info("Dev AUC: {}".format(dev_auc))
 
@@ -127,6 +129,9 @@ with tf.Session() as sess:
             logging.info("- early stopping {} epochs without improvement".format(current_early_stop_times))
             break
 
-    test_auc = test_dev_auc(num_test_batch, y_test_task, test_patient_name, n_test, sess,
+    test_auc,test_auc_per_task = test_dev_auc(num_test_batch, y_test_task, test_patient_name, n_test, sess,
                             input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list)
-    logging.info("Dev AUC: {}".format(test_auc))
+    logging.info("Test total AUC: {}".format(test_auc))
+    logging.info("Test total AUC: {}".format(test_auc_per_task))
+
+
