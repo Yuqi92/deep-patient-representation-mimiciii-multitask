@@ -31,7 +31,8 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 
 # task
-tasks_dead_date = [0, 31, 366]
+# tasks_dead_date = [0, 31, 366]
+tasks_dead_date = [91]
 # 20-task
 # tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
 # 
@@ -53,11 +54,16 @@ dim_category = 10
 document_filter_size = 3
 document_num_filters = 50
 learning_rate = 0.01
+drop_out_train = 0.8
+
+model_type = "SIMPLE"  # can be CNN or SIMPLE
 
 num_classes = 2
 lambda_regularizer_strength = 5
 
-model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
+
+model_path = "merged/multi_task/result_3_task_simple/model_1/model.ckpt"
+#model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
 # CNN_mimiciii_mortality_prediction/merged/multi_task/result_20_task/model_1
 # log

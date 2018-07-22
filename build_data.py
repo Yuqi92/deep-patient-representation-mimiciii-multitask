@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 import math
 from tqdm import tqdm
-from utility import generate_token_embedding, split_train_test_dev, CNN_model,\
-    generate_label_from_dead_date, test_dev_auc
+from utility import load_x_data_for_cnn, split_train_test_dev, CNN_model,\
+    generate_label_from_dead_date, test_dev_auc, simple_model,\
+    load_x_data_for_simple
 import logging
 import HP
-from multiprocessing import Pool
 from Embedding import Embedding
 
 _ = Embedding.get_embedding()
@@ -48,18 +48,29 @@ num_train_batch = int(math.ceil(n_train / HP.n_batch))
 num_dev_batch = int(math.ceil(n_dev / HP.n_batch))
 num_test_batch = int(math.ceil(n_test / HP.n_batch))
 
-# define placeholders
-input_x = tf.placeholder(tf.float32,
-                         [None, HP.max_document_length, HP.max_sentence_length, HP.embedding_size],
-                         name="input_x")
+# define placeholders and model
 input_ys = []
 for i in range(HP.multi_size):
     input_ys.append(tf.placeholder(tf.int32, [None, HP.num_classes], name="input_y"+str(i)))
-sent_length = tf.placeholder(tf.int32, [None], name="sent_length")
-# category placeholder
-category_index = tf.placeholder(tf.int32, [None, HP.max_document_length], name='category_index')
-dropout_keep_prob = tf.placeholder(tf.float32, [], name="dropout_keep_prob")
-optimize, scores_soft_max_list, _ = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
+
+if HP.model_type == "CNN":
+    input_x = tf.placeholder(tf.float32,
+                         [None, HP.max_document_length, HP.max_sentence_length, HP.embedding_size],
+                         name="input_x")
+    sent_length = tf.placeholder(tf.int32, [None], name="sent_length")
+    # category placeholder
+    category_index = tf.placeholder(tf.int32, [None, HP.max_document_length], name='category_index')
+    dropout_keep_prob = tf.placeholder(tf.float32, [], name="dropout_keep_prob")
+    optimize, scores_soft_max_list, _ = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
+elif HP.model_type == "SIMPLE":
+    input_x = tf.placeholder(tf.float32,
+                         [None, HP.document_filter_size],
+                         name="input_x")
+    optimize, scores_soft_max_list = simple_model(input_x, input_ys)
+else:
+    logging.error("unsupport model type")
+    optimize = None
+    scores_soft_max_list = None
 saver = tf.train.Saver()
 
 with tf.Session() as sess:
@@ -86,28 +97,19 @@ with tf.Session() as sess:
             for t in y_train_task:
                 tmp_y_train.append(t[i*HP.n_batch:min((i+1)*HP.n_batch, n_train)])
 
-            pool = Pool(processes=HP.read_data_thread_num)
-            generate_token_embedding_results = pool.map(generate_token_embedding, tmp_train_patient_name)
-            pool.close()
-            pool.join()
+            if HP.model_type == "CNN":
+                feed_dict = load_x_data_for_cnn(tmp_train_patient_name,
+                                                HP.drop_out_train,
+                                                input_x,
+                                                sent_length,
+                                                category_index,
+                                                dropout_keep_prob)
+            elif HP.model_type == "SIMPLE":
+                feed_dict = load_x_data_for_simple(tmp_train_patient_name, input_x)
+            else:
+                logging.error("unsupported model type")
+                feed_dict = None
 
-            tmp_x_train = np.zeros([len(generate_token_embedding_results),
-                                    HP.n_max_sentence_num,
-                                    HP.n_max_word_num,
-                                    HP.embedding_size], dtype=np.float32)
-            l = []
-            tmp_cate = []
-            for (M, r) in enumerate(generate_token_embedding_results):
-                tmp_x_train[M] = r[0]
-                l.append(r[1])
-                tmp_cate.append(r[2])
-
-            cate_id = np.stack(tmp_cate)
-            l = np.asarray(l)
-            feed_dict = {input_x: tmp_x_train,
-                         sent_length: l,
-                         category_index: cate_id,
-                         dropout_keep_prob: 0.8}
             for (M, input_y) in enumerate(input_ys):
                 feed_dict[input_y] = tmp_y_train[M]
             # logging.info("start to train")

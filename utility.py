@@ -4,8 +4,10 @@ import HP
 from sklearn.metrics import roc_auc_score
 import logging
 from Embedding import Embedding
+from multiprocessing import Pool
 
-logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
+
+logging.basicConfig(filename=HP.log_file_name, level=logging.INFO, format='%(asctime)s %(message)s')
 
 
 def generate_token_embedding(pid):
@@ -77,6 +79,39 @@ def generate_label_from_dead_date(y_series):
         label = np.asarray(label)
         labels.append(label)
     return labels
+
+
+def simple_model(input_x, input_ys):
+    # input_x : n_batch * document_filter_size
+    total_loss = 0
+    scores_soft_max_list = []
+    for (M,input_y) in enumerate(input_ys):
+        with tf.name_scope("task"+str(M)):
+            W = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.num_classes], stddev=0.1), name="W")
+            b = tf.Variable(tf.constant(0.1, shape=[HP.num_classes]), name="b")
+
+            scores = tf.nn.xw_plus_b(input_x, W, b)
+            # scores has shape: [n_batch, num_classes]
+            scores_soft_max = tf.nn.softmax(scores)
+            scores_soft_max_list.append(scores_soft_max)  # scores_soft_max_list shape:[multi_size, n_batch, num_classes]
+            # predictions = tf.argmax(scores, axis=1, name="predictions")
+            # predictions has shape: [None, ]. A shape of [x, ] means a vector of size x
+            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=input_y)
+            # losses has shape: [None, ]
+            # include target replication
+            # total_loss += losses
+            loss_avg = tf.reduce_mean(losses)
+            total_loss += loss_avg
+    # avg_loss = tf.reduce_mean(total_loss)
+    # optimize function
+    optimizer = tf.train.AdamOptimizer(learning_rate=HP.learning_rate)
+    optimize = optimizer.minimize(total_loss)
+    scores_soft_max_list = tf.stack(scores_soft_max_list, axis=0)
+    # correct_predictions = tf.equal(predictions, tf.argmax(input_y, 1))
+    # accuracy = tf.reduce_sum(tf.cast(correct_predictions, "float"), name="accuracy")
+
+    return optimize, scores_soft_max_list
+
 
 
 # CNN model architecture
@@ -216,21 +251,18 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
             # get the seperate true label for each task
             y_seperate_task_label[y_i].extend(np.argmax(tmp_y_task, axis=1).tolist()) # for each task: order : num_batch....
 
-        tmp_x = []
-        l = []
-        tmp_cate = []
-        for pid in tmp_patient_name:
-            new_x, new_l, new_cate = generate_token_embedding(pid)
-            tmp_x.append(new_x)
-            l.append(new_l)
-            tmp_cate.append(new_cate)
-        tmp_x = np.stack(tmp_x)
-        cate_id = np.stack(tmp_cate)
-        l = np.asarray(l)
-        feed_dict = {input_x: tmp_x,
-                     sent_length: l,
-                     category_index: cate_id,
-                     dropout_keep_prob: 1.0}
+        if HP.model_type == "CNN":
+            feed_dict = load_x_data_for_cnn(tmp_patient_name,
+                                            1.0,
+                                            input_x,
+                                            sent_length,
+                                            category_index,
+                                            dropout_keep_prob)
+        elif HP.model_type == "SIMPLE":
+            feed_dict = load_x_data_for_simple(tmp_patient_name, input_x)
+        else:
+            logging.error("not support model type")
+            feed_dict = None
         pre = sess.run(scores_soft_max_list, feed_dict=feed_dict)  # [3,n_batch,2]
         # slice the 3D array to get each on the first dimensional
         # get the seperate predictions for each task
@@ -248,3 +280,40 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
     for m in range(HP.multi_size):
         auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
     return auc, auc_per_task
+
+
+def load_x_data_for_cnn(patient_name, keep_prob, input_x, sent_length, category_index, dropout_keep_prob):
+    pool = Pool(processes=HP.read_data_thread_num)
+    generate_token_embedding_results = pool.map(generate_token_embedding, patient_name)
+    pool.close()
+    pool.join()
+
+    tmp_x = np.zeros([len(generate_token_embedding_results),
+                            HP.n_max_sentence_num,
+                            HP.n_max_word_num,
+                            HP.embedding_size], dtype=np.float32)
+    l = []
+    tmp_cate = []
+    for (M, r) in enumerate(generate_token_embedding_results):
+        tmp_x[M] = r[0]
+        l.append(r[1])
+        tmp_cate.append(r[2])
+
+    cate_id = np.stack(tmp_cate)
+    l = np.asarray(l)
+    feed_dict = {input_x: tmp_x,
+                 sent_length: l,
+                 category_index: cate_id,
+                 dropout_keep_prob: keep_prob}
+    return feed_dict
+
+
+def load_x_data_for_simple(patient_name, input_x):
+    p_vector_list = []
+    for p in patient_name:
+        p_np = np.load(HP.patient_vector_directory + p + ".npy")
+        p_vector_list.append(p_np)
+    tmp_x = np.stack(p_vector_list)
+    feed_dict = {input_x: tmp_x}
+    return feed_dict
+
