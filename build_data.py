@@ -64,7 +64,7 @@ if HP.model_type == "CNN":
     optimize, scores_soft_max_list, _ = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
 elif HP.model_type == "SIMPLE":
     input_x = tf.placeholder(tf.float32,
-                         [None, HP.document_filter_size],
+                         [None, HP.document_num_filters],
                          name="input_x")
     optimize, scores_soft_max_list = simple_model(input_x, input_ys)
 else:
