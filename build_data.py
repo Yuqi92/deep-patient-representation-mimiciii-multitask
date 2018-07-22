@@ -66,6 +66,9 @@ elif HP.model_type == "SIMPLE":
     input_x = tf.placeholder(tf.float32,
                          [None, HP.document_num_filters],
                          name="input_x")
+    sent_length = None
+    category_index = None
+    dropout_keep_prob = None
     optimize, scores_soft_max_list = simple_model(input_x, input_ys)
 else:
     logging.error("unsupport model type")
