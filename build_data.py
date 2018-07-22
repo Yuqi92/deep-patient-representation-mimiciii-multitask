@@ -59,7 +59,7 @@ sent_length = tf.placeholder(tf.int32, [None], name="sent_length")
 # category placeholder
 category_index = tf.placeholder(tf.int32, [None, HP.max_document_length], name='category_index')
 dropout_keep_prob = tf.placeholder(tf.float32, [], name="dropout_keep_prob")
-optimize, scores_soft_max_list = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
+optimize, scores_soft_max_list, _ = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
 saver = tf.train.Saver()
 
 with tf.Session() as sess:

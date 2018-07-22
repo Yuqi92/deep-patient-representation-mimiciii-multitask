@@ -162,6 +162,7 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
     # Maxpooling over the outputs
     # another implementation of max-pool
     pooled_second = tf.reduce_max(h, axis=1)  # n_batch * document_num_filters
+    patient_vector = pooled_second
     with tf.name_scope("dropout"):
         pooled_second_drop = tf.nn.dropout(pooled_second, dropout_keep_prob)
 
@@ -191,7 +192,7 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
     # correct_predictions = tf.equal(predictions, tf.argmax(input_y, 1))
     # accuracy = tf.reduce_sum(tf.cast(correct_predictions, "float"), name="accuracy")
 
-    return optimize, scores_soft_max_list
+    return optimize, scores_soft_max_list, patient_vector
 
 
 def test_dev_auc(num_batch, y_task, patient_name, n, sess,

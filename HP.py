@@ -6,6 +6,7 @@ mimic_patients = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/mi
 
 result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
 data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
+patient_vector_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/patient_vector/"
 
 #result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
 #data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
@@ -56,7 +57,7 @@ learning_rate = 0.01
 num_classes = 2
 lambda_regularizer_strength = 5
 
-model_path = "merged/multi_task/result_5_task/model_1/model.weights/model.ckpt"
+model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
 # CNN_mimiciii_mortality_prediction/merged/multi_task/result_20_task/model_1
 # log
