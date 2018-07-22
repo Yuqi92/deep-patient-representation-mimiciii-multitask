@@ -12,7 +12,7 @@ from Embedding import Embedding
 
 _ = Embedding.get_embedding()
 
-logging.basicConfig(filename=HP.log_file_name, level=logging.INFO)
+logging.basicConfig(filename=HP.log_file_name, level=logging.INFO, format='%(asctime)s %(message)s')
 
 result_csv = pd.read_csv(HP.result_csv)
 
