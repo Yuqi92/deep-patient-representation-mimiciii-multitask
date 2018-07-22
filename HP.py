@@ -31,11 +31,11 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 
 # task
-#tasks_dead_date = [31]
+tasks_dead_date = [0, 31, 366]
 # 20-task
 # tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
 # 
-tasks_dead_date = [0, 31, 91, 183, 366]
+# tasks_dead_date = [0, 31, 91, 183, 366]
 
 
 # model

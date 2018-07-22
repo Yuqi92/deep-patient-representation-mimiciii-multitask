@@ -62,4 +62,4 @@ with tf.Session() as sess:
         # logging.info("start to train")
         tmp_patient_vector = sess.run(patient_vector, feed_dict=feed_dict)
         for j in range(len(tmp_train_patient_name)):
-            np.save(HP.patient_vector_directory + tmp_train_patient_name[i] + ".npy", tmp_patient_vector[j])
+            np.save(HP.patient_vector_directory + tmp_train_patient_name[j] + ".npy", tmp_patient_vector[j])
