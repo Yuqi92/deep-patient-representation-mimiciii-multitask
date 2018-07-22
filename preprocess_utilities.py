@@ -39,6 +39,12 @@ def get_age(row):
     else:
         return raw_age
 
+def regenerate_dead_date(c):
+    if c['HOSPITAL_EXPIRE_FLAG'] == 1:
+        return -1.0
+    else:
+        return c['dead_after_disch_date']
+
 
 def preprocess(df_note, admission, patient):
     # remove discharge summary
@@ -104,6 +110,7 @@ def preprocess(df_note, admission, patient):
     patient_note_label['dead_after_disch_date'] = patient_note_label['DOD'] - patient_note_label['DISCHTIME']
     patient_note_label['dead_after_disch_date'] = patient_note_label['dead_after_disch_date'].dt.days
 
-    patient_note_label = patient_note_label[['full_text', 'dead_after_disch_date']]
+    patient_note_label['dead_date'] = patient_note_label.apply(regenerate_dead_date,axis=1)
+    patient_note_label = patient_note_label[['full_text', 'dead_date']]
 
     return patient_note_label

@@ -239,7 +239,7 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
             seperate_pre[m].extend(pre_pos.tolist()) 
 
         # get the total predictions for all
-        pre = pre.reshape(-1, HP.n_class)  # [3*n_batch,2]  in one batch: task1+task2+task3
+        pre = pre.reshape(-1, HP.num_classes)  # [3*n_batch,2]  in one batch: task1+task2+task3
         pre = pre[:, 1]  # get probability of positive class
         predictions.extend(pre.tolist())   # task1,2,3_batch1 + task1,2,3_batch2+ task1,2,3_batch3....
     auc = roc_auc_score(np.asarray(y_total_task_label), np.asarray(predictions))

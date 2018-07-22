@@ -54,7 +54,7 @@ input_x = tf.placeholder(tf.float32,
                          name="input_x")
 input_ys = []
 for i in range(HP.multi_size):
-    input_ys.append(tf.placeholder(tf.int32, [None, HP.n_class], name="input_y"+str(i)))
+    input_ys.append(tf.placeholder(tf.int32, [None, HP.num_classes], name="input_y"+str(i)))
 sent_length = tf.placeholder(tf.int32, [None], name="sent_length")
 # category placeholder
 category_index = tf.placeholder(tf.int32, [None, HP.max_document_length], name='category_index')
@@ -72,7 +72,7 @@ with tf.Session() as sess:
     max_auc = 0
     current_early_stop_times = 0
 
-    while False:
+    while True:
         np.random.shuffle(shuf_train_ind)
         train_patient_name = train_patient_name[shuf_train_ind]
         for i in range(len(y_train_task)):
