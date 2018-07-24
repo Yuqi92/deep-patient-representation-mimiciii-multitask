@@ -1,17 +1,17 @@
 
 # data
-mimic_note_events = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/mimic_csv/NOTEEVENTS.csv'
-mimic_admissions = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/mimic_csv/ADMISSIONS.csv'
-mimic_patients = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/mimic_csv/PATIENTS.csv'
+mimic_note_events = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/NOTEEVENTS.csv'
+mimic_admissions = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/ADMISSIONS.csv'
+mimic_patients = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/PATIENTS.csv'
 
-result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
-data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
-patient_vector_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/patient_vector/"
+result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
+data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
+#patient_vector_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/patient_vector/"
 
 #result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
 #data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
 
-index_path = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/merged/index'
+index_path = '/data/CNN_mimiciii_mortality_prediction/merged/index'
 #index_path = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/index'
 index_train_path = index_path + '/train.npy'
 index_dev_path = index_path + '/dev.npy'
@@ -32,15 +32,15 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 # task
 # tasks_dead_date = [0, 31, 366]
-tasks_dead_date = [91]
+#tasks_dead_date = [91]
 # 20-task
 # tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
 # 
-# tasks_dead_date = [0, 31, 91, 183, 366]
+tasks_dead_date = [0, 31, 91, 183, 366]
 
 
 # model
-restore = False
+restore = True
 multi_size = len(tasks_dead_date)
 embedding_size = 100
 max_document_length = 1000
@@ -53,16 +53,16 @@ n_category = len(category)
 dim_category = 10
 document_filter_size = 3
 document_num_filters = 50
-learning_rate = 0.01
+learning_rate = 0.00001
 drop_out_train = 0.8
 
-model_type = "SIMPLE"  # can be CNN or SIMPLE
+model_type = "CNN"  # can be CNN or SIMPLE
 
 num_classes = 2
 lambda_regularizer_strength = 5
 
 
-model_path = "merged/multi_task/result_3_task_simple/model_1/model.ckpt"
+model_path = "/data/CNN_mimiciii_mortality_prediction/merged/multi_task/result_5_task/model_1/model.weights/model.ckpt"
 #model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
 # CNN_mimiciii_mortality_prediction/merged/multi_task/result_20_task/model_1
