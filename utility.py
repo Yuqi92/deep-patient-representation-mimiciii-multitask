@@ -50,6 +50,7 @@ def generate_token_embedding(pid):
 
 # split train test dev
 def split_train_test_dev(n_patient):
+    '''
     if not HP.load_index:
         index_list = np.arange(n_patient)
         np.random.shuffle(index_list)
@@ -60,16 +61,53 @@ def split_train_test_dev(n_patient):
         np.save(HP.index_dev_path, dev_index)
         np.save(HP.index_test_path, test_index)
         np.save(HP.index_train_path, train_index)
-    else:
-        dev_index = np.load(HP.index_dev_path)
-        train_index = np.load(HP.index_train_path)
-        test_index = np.load(HP.index_test_path)
+    else:'''
+
+    dev_index = np.load(HP.index_dev_path)
+    train_index = np.load(HP.index_train_path)
+    test_index = np.load(HP.index_test_path)
     return train_index, test_index, dev_index
 
+
+def generate_label_from_date(y_dead_series,y_los_series):
+    labels = []
+    for dead_date in HP.tasks_dead_date:
+        label = []
+        for index, y in y_dead_series.iteritems():
+            if y < dead_date:
+                label.append([0, 1])
+            else:
+                label.append([1, 0])
+        label = np.asarray(label)
+        labels.append(label)
+    for los_date in HP.tasks_los_date:
+        label = []
+        for index, y in y_los_series.iteritems():
+            if y < los_date:
+                label.append([0, 1])
+            else:
+                label.append([1, 0])
+        label = np.asarray(label)
+        labels.append(label)
+
+    return labels
 
 def generate_label_from_dead_date(y_series):
     labels = []
     for dead_date in HP.tasks_dead_date:
+        label = []
+        for index, y in y_series.iteritems():
+            if y < dead_date:
+                label.append([0, 1])
+            else:
+                label.append([1, 0])
+        label = np.asarray(label)
+        labels.append(label)
+    return labels
+
+def generate_label_from_los_date(y_series):
+    labels = []
+    for dead_date in HP.tasks_los_date:
         label = []
         for index, y in y_series.iteritems():
             if y < dead_date:

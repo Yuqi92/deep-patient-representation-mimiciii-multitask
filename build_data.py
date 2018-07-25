@@ -4,8 +4,8 @@ import pandas as pd
 import math
 from tqdm import tqdm
 from utility import load_x_data_for_cnn, split_train_test_dev, CNN_model,\
-    generate_label_from_dead_date, test_dev_auc, simple_model,\
-    load_x_data_for_simple
+    generate_label_from_dead_date, generate_label_from_los_date, generate_label_from_date,\
+    test_dev_auc, simple_model, load_x_data_for_simple
 import logging
 import HP
 from Embedding import Embedding
@@ -14,15 +14,21 @@ _ = Embedding.get_embedding()
 
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO, format='%(asctime)s %(message)s')
 
-result_csv = pd.read_csv(HP.result_csv)
+result_csv = pd.read_csv(HP.result_csv_dead_los)
 
 # split train test dev
 logging.info('split_train_test_dev')
 train_index, test_index, dev_index = split_train_test_dev(len(result_csv))
 
+
 train_dead_date = result_csv['dead_after_disch_date'].iloc[train_index]
 dev_dead_date = result_csv['dead_after_disch_date'].iloc[dev_index]
 test_dead_date = result_csv['dead_after_disch_date'].iloc[test_index]
+
+train_los_date = result_csv['length_of_stay'].iloc[train_index]
+dev_los_date = result_csv['length_of_stay'].iloc[dev_index]
+test_los_date = result_csv['length_of_stay'].iloc[test_index]
+
 
 dev_patient_name = np.asarray(result_csv["patient_id"].iloc[dev_index])
 test_patient_name = np.asarray(result_csv["patient_id"].iloc[test_index])  # patient0, patient1, ...
@@ -30,9 +36,19 @@ train_patient_name = np.asarray(result_csv["patient_id"].iloc[train_index])
 
 logging.info('generate label from dead date')
 
-y_dev_task = generate_label_from_dead_date(dev_dead_date)  # list of nparray
-y_test_task = generate_label_from_dead_date(test_dead_date)
-y_train_task = generate_label_from_dead_date(train_dead_date)
+if HP.tasks_dead_date is not None and HP.tasks_los_date is not None:
+    y_dev_task = generate_label_from_date(dev_dead_date, dev_los_date)  # list of nparray
+    y_test_task = generate_label_from_date(test_dead_date, test_los_date)
+    y_train_task = generate_label_from_date(train_dead_date, train_los_date)
+elif HP.tasks_los_date is None:
+    y_dev_task = generate_label_from_dead_date(dev_dead_date)  # list of nparray
+    y_test_task = generate_label_from_dead_date(test_dead_date)
+    y_train_task = generate_label_from_dead_date(train_dead_date)
+elif HP.tasks_dead_date is None:
+    y_dev_task = generate_label_from_los_date(dev_los_date)  # list of nparray
+    y_test_task = generate_label_from_los_date(test_los_date)
+    y_train_task = generate_label_from_los_date(train_los_date)
+
 
 logging.info('get files')
 

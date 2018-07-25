@@ -43,7 +43,7 @@ def regenerate_dead_date(c):
     if c['HOSPITAL_EXPIRE_FLAG'] == 1:
         return -1.0
     else:
-        return c['dead_after_disch_date']
+        return c['dead_date']
 
 
 def preprocess(df_note, admission, patient):
@@ -63,7 +63,7 @@ def preprocess(df_note, admission, patient):
     # admit time = 1
     admission['admit_times'] = admission.groupby(['SUBJECT_ID'])['SUBJECT_ID'].transform('size')
     admission = admission[admission['admit_times'] < 2]
-    admission = admission.drop(['ROW_ID', 'HADM_ID', 'ADMITTIME', 'ADMISSION_TYPE',
+    admission = admission.drop(['ROW_ID', 'HADM_ID', 'ADMISSION_TYPE',
                                 'ADMISSION_LOCATION', 'DISCHARGE_LOCATION',
                                 'INSURANCE', 'LANGUAGE', 'RELIGION', 'MARITAL_STATUS',
                                 'ETHNICITY', 'EDREGTIME', 'EDOUTTIME',
@@ -76,6 +76,7 @@ def preprocess(df_note, admission, patient):
     patient_note = pd.merge(patient_filter, df_no_dis, on='SUBJECT_ID', how='inner')
 
     #remove chart after discharge
+    patient_note['ADMITTIME'] = pd.to_datetime(patient_note['ADMITTIME'])
     patient_note['DISCHTIME'] = pd.to_datetime(patient_note['DISCHTIME'])
     patient_note['CHARTDATE'] = pd.to_datetime(patient_note['CHARTDATE'])
     patient_note['CHARTTIME'] = pd.to_datetime(patient_note['CHARTTIME'])
@@ -89,7 +90,7 @@ def preprocess(df_note, admission, patient):
     # combine two columns to one column with tuple
     patient_note['category_text'] = list(zip(patient_note['CATEGORY'], patient_note['TEXT']))
 
-    patient_label = patient_note[['SUBJECT_ID', 'DOD', 'DISCHTIME',
+    patient_label = patient_note[['SUBJECT_ID', 'ADMITTIME','DOD', 'DISCHTIME',
                                   'DEATHTIME', 'HOSPITAL_EXPIRE_FLAG']]
     patient_label = patient_label.drop_duplicates()
 
@@ -107,10 +108,14 @@ def preprocess(df_note, admission, patient):
     patient_note_label['DEATHTIME'] = pd.to_datetime(patient_note_label['DEATHTIME'])
     patient_note_label['DOD'] = pd.to_datetime(patient_note_label['DOD'])
 
-    patient_note_label['dead_after_disch_date'] = patient_note_label['DOD'] - patient_note_label['DISCHTIME']
-    patient_note_label['dead_after_disch_date'] = patient_note_label['dead_after_disch_date'].dt.days
+    patient_note_label['dead_date'] = patient_note_label['DOD'] - patient_note_label['DISCHTIME']
+    patient_note_label['dead_date'] = patient_note_label['dead_date'].dt.days
 
-    patient_note_label['dead_date'] = patient_note_label.apply(regenerate_dead_date,axis=1)
-    patient_note_label = patient_note_label[['full_text', 'dead_date']]
+    patient_note_label['dead_after_disch_date'] = patient_note_label.apply(regenerate_dead_date,axis=1)
 
-    return patient_note_label
+    patient_note_label['LOS'] = patient_note_label['DISCHTIME'] - patient_note_label['ADMITTIME']
+    patient_note_label['LOS'] = patient_note_label['LOS'].dt.days
+    patient_note_with_label = patient_note_label[['full_text', 'dead_after_disch_date', "LOS"]]
+    patient_subjectid2index = patient_note_label['SUBJECT_ID']
+
+    return patient_note_with_label, patient_subjectid2index
