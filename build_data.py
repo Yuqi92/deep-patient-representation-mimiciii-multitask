@@ -36,18 +36,23 @@ train_patient_name = np.asarray(result_csv["patient_id"].iloc[train_index])
 
 logging.info('generate label from dead date')
 
-if HP.tasks_dead_date is not None and HP.tasks_los_date is not None:
+if len(HP.tasks_dead_date) != 0 and len(HP.tasks_los_date) != 0:
     y_dev_task = generate_label_from_date(dev_dead_date, dev_los_date)  # list of nparray
     y_test_task = generate_label_from_date(test_dead_date, test_los_date)
     y_train_task = generate_label_from_date(train_dead_date, train_los_date)
-elif HP.tasks_los_date is None:
+elif len(HP.tasks_los_date) == 0:
     y_dev_task = generate_label_from_dead_date(dev_dead_date)  # list of nparray
     y_test_task = generate_label_from_dead_date(test_dead_date)
     y_train_task = generate_label_from_dead_date(train_dead_date)
-elif HP.tasks_dead_date is None:
+elif len(HP.tasks_dead_date) == 0:
     y_dev_task = generate_label_from_los_date(dev_los_date)  # list of nparray
     y_test_task = generate_label_from_los_date(test_los_date)
     y_train_task = generate_label_from_los_date(train_los_date)
+else:
+    logging.error("no task label")
+    y_dev_task = None
+    y_test_task = None
+    y_train_task = None
 
 
 logging.info('get files')
@@ -78,6 +83,7 @@ if HP.model_type == "CNN":
     category_index = tf.placeholder(tf.int32, [None, HP.max_document_length], name='category_index')
     dropout_keep_prob = tf.placeholder(tf.float32, [], name="dropout_keep_prob")
     optimize, scores_soft_max_list, _ = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
+
 elif HP.model_type == "SIMPLE":
     input_x = tf.placeholder(tf.float32,
                          [None, HP.document_num_filters],
