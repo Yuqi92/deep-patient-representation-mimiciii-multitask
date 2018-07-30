@@ -242,16 +242,23 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
     scores_soft_max_list = []
     for (M,input_y) in enumerate(input_ys):
         with tf.name_scope("task"+str(M)):
+            W_fully = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.document_num_filters], stddev=0.1), name="W_fully")
+            b_fully = tf.Variable(tf.constant(0.1, shape=[HP.document_num_filters]), name="b_fully")
+            scores = tf.nn.xw_plus_b(pooled_second_drop, W_fully, b_fully) # n_batch * document_num_filters
+
+            with tf.name_scope("dropout_second"):
+                scores_drop = tf.nn.dropout(scores, dropout_keep_prob)
+
             W = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.num_classes], stddev=0.1), name="W")
             b = tf.Variable(tf.constant(0.1, shape=[HP.num_classes]), name="b")
 
-            scores = tf.nn.xw_plus_b(pooled_second_drop, W, b)
-            # scores has shape: [n_batch, num_classes]
-            scores_soft_max = tf.nn.softmax(scores)
+            scores_2 = tf.nn.xw_plus_b(scores_drop, W, b)
+            # scores_2 has shape: [n_batch, num_classes]
+            scores_soft_max = tf.nn.softmax(scores_2)
             scores_soft_max_list.append(scores_soft_max)  # scores_soft_max_list shape:[multi_size, n_batch, num_classes]
             # predictions = tf.argmax(scores, axis=1, name="predictions")
             # predictions has shape: [None, ]. A shape of [x, ] means a vector of size x
-            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=input_y)
+            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores_2, labels=input_y)
             # losses has shape: [None, ]
             # include target replication
             # total_loss += losses

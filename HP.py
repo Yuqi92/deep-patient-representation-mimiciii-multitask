@@ -6,7 +6,7 @@ mimic_patients = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/PATIENTS.csv
 
 result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
 data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
-patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_3_task/"
+patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_5_task/"
 
 #result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
 #data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
@@ -33,8 +33,8 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 
 # mortality task
-#tasks_dead_date = [31, 366]
-tasks_dead_date = []
+tasks_dead_date = [31, 366]
+#tasks_dead_date = []
 # 20-task
 #tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
 # 
@@ -55,7 +55,7 @@ n_category = len(category)
 dim_category = 10
 document_filter_size = 3
 document_num_filters = 50
-learning_rate = 0.001
+learning_rate = 0.01
 drop_out_train = 0.8
 
 model_type = "CNN"  # can be CNN or SIMPLE
@@ -65,7 +65,7 @@ num_classes = 2
 lambda_regularizer_strength = 5
 
 
-model_path = "/data/CNN_mimiciii_mortality_prediction/merged/uni_task_result/los_6_results/model_1/model.ckpt"
+model_path = "/data/CNN_mimiciii_mortality_prediction/merged/multi_task/los_6_dead_31_366/model_2/model.weights/model.ckpt"
 #model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
 # CNN_mimiciii_mortality_prediction/merged/multi_task/result_20_task/model_1
