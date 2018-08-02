@@ -242,23 +242,24 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
     scores_soft_max_list = []
     for (M,input_y) in enumerate(input_ys):
         with tf.name_scope("task"+str(M)):
+            '''
             W_fully = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.document_num_filters], stddev=0.1), name="W_fully")
             b_fully = tf.Variable(tf.constant(0.1, shape=[HP.document_num_filters]), name="b_fully")
-            scores = tf.nn.xw_plus_b(pooled_second_drop, W_fully, b_fully) # n_batch * document_num_filters
+            scores_2 = tf.nn.xw_plus_b(pooled_second_drop, W_fully, b_fully) # n_batch * document_num_filters
 
             with tf.name_scope("dropout_second"):
-                scores_drop = tf.nn.dropout(scores, dropout_keep_prob)
-
+                scores_drop = tf.nn.dropout(scores_2, dropout_keep_prob)
+            '''
             W = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.num_classes], stddev=0.1), name="W")
             b = tf.Variable(tf.constant(0.1, shape=[HP.num_classes]), name="b")
 
-            scores_2 = tf.nn.xw_plus_b(scores_drop, W, b)
+            scores = tf.nn.xw_plus_b(pooled_second_drop, W, b)
             # scores_2 has shape: [n_batch, num_classes]
-            scores_soft_max = tf.nn.softmax(scores_2)
+            scores_soft_max = tf.nn.softmax(scores)
             scores_soft_max_list.append(scores_soft_max)  # scores_soft_max_list shape:[multi_size, n_batch, num_classes]
             # predictions = tf.argmax(scores, axis=1, name="predictions")
             # predictions has shape: [None, ]. A shape of [x, ] means a vector of size x
-            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores_2, labels=input_y)
+            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=input_y)
             # losses has shape: [None, ]
             # include target replication
             # total_loss += losses
@@ -276,7 +277,7 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
 
 
 def test_dev_auc(num_batch, y_task, patient_name, n, sess,
-                 input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list):
+                 input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag):
     y_total_task_label = []
     predictions = []
 
@@ -314,7 +315,8 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
         for m in range(HP.multi_size):
             pre_slice = pre[m, :]
             pre_pos = pre_slice[:, 1]
-            seperate_pre[m].extend(pre_pos.tolist()) 
+            seperate_pre[m].extend(pre_pos.tolist())
+
 
         # get the total predictions for all
         pre = pre.reshape(-1, HP.num_classes)  # [3*n_batch,2]  in one batch: task1+task2+task3
@@ -322,8 +324,17 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
         predictions.extend(pre.tolist())   # task1,2,3_batch1 + task1,2,3_batch2+ task1,2,3_batch3....
     auc = roc_auc_score(np.asarray(y_total_task_label), np.asarray(predictions))
 
-    for m in range(HP.multi_size):
-        auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
+    if test_output_flag:
+        test_output_file = open(HP.test_output, "w")
+        for m in range(HP.multi_size):
+            auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
+            test_output_file.write("----task----"+str(m)+"\n")
+            test_output_file.write("patient_id,true,prediction\n")
+            for p in range(len(patient_name)):
+                test_output_file.write(str(patient_name[p]) + "," + str(y_seperate_task_label[m][p]) + "," + str(round(seperate_pre[m][p],4)) + "\n")
+    else:
+        logging.info("Dev finished")
+
     return auc, auc_per_task
 
 

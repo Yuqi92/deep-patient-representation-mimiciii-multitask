@@ -142,7 +142,7 @@ with tf.Session() as sess:
 
         # get validation result
         dev_auc,_ = test_dev_auc(num_dev_batch, y_dev_task, dev_patient_name, n_dev, sess,
-                               input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list)
+                               input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag=False)
         logging.info("Dev AUC: {}".format(dev_auc))
 
         if dev_auc > max_auc:
@@ -157,7 +157,7 @@ with tf.Session() as sess:
             break
 
     test_auc,test_auc_per_task = test_dev_auc(num_test_batch, y_test_task, test_patient_name, n_test, sess,
-                            input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list)
+                            input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag=False)
     logging.info("Test total AUC: {}".format(test_auc))
     logging.info("Test total AUC: {}".format(test_auc_per_task))
 
