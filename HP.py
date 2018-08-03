@@ -6,7 +6,7 @@ mimic_patients = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/PATIENTS.csv
 
 result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
 data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
-patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_20_task/"
+patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_los_6_31_366/"
 
 #result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
 #data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
@@ -33,8 +33,8 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 
 # mortality task
-tasks_dead_date = [61]
-#tasks_dead_date = []
+
+tasks_dead_date = [366]
 # 20-task
 #tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
 # 
@@ -42,7 +42,7 @@ tasks_dead_date = [61]
 # length of stay
 tasks_los_date = []
 # model
-restore = False
+restore = True
 multi_size = len(tasks_dead_date) + len(tasks_los_date)
 embedding_size = 100
 max_document_length = 1000
@@ -55,7 +55,7 @@ n_category = len(category)
 dim_category = 10
 document_filter_size = 3
 document_num_filters = 50
-learning_rate = 0.001
+learning_rate = 0.00001
 drop_out_train = 0.8
 
 model_type = "CNN"  # can be CNN or SIMPLE
@@ -64,7 +64,7 @@ model_type = "CNN"  # can be CNN or SIMPLE
 num_classes = 2
 lambda_regularizer_strength = 5
 
-model_folder = "/data/CNN_mimiciii_mortality_prediction/merged/uni_task_result/60_day_results/"
+model_folder = "/data/CNN_mimiciii_mortality_prediction/merged/uni_task_result/one_year_results/model_1/"
 model_path = model_folder+ "model.weights/model.ckpt"
 #model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
@@ -73,4 +73,4 @@ model_path = model_folder+ "model.weights/model.ckpt"
 log_file_name = "example.log"
 
 
-test_output = model_folder +'test_error_analysis.csv'
+test_output = model_folder +'test_error_analysis_single_task_1_year.csv'

@@ -125,6 +125,14 @@ def simple_model(input_x, input_ys):
     scores_soft_max_list = []
     for (M,input_y) in enumerate(input_ys):
         with tf.name_scope("task"+str(M)):
+            '''
+            W_fully = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.document_num_filters], stddev=0.1), name="W_fully")
+            b_fully = tf.Variable(tf.constant(0.1, shape=[HP.document_num_filters]), name="b_fully")
+            scores_2 = tf.nn.xw_plus_b(input_x, W_fully, b_fully) # n_batch * document_num_filters
+            
+            with tf.name_scope("dropout_second"):
+                scores_drop = tf.nn.dropout(scores_2, 0.8)
+            '''
             W = tf.Variable(tf.truncated_normal([HP.document_num_filters, HP.num_classes], stddev=0.1), name="W")
             b = tf.Variable(tf.constant(0.1, shape=[HP.num_classes]), name="b")
 
@@ -328,7 +336,7 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
         test_output_file = open(HP.test_output, "w")
         for m in range(HP.multi_size):
             auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
-            test_output_file.write("----task----"+str(m)+"\n")
+            #test_output_file.write("----task----"+str(m)+"\n")
             test_output_file.write("patient_id,true,prediction\n")
             for p in range(len(patient_name)):
                 test_output_file.write(str(patient_name[p]) + "," + str(y_seperate_task_label[m][p]) + "," + str(round(seperate_pre[m][p],4)) + "\n")

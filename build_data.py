@@ -108,7 +108,7 @@ with tf.Session() as sess:
     max_auc = 0
     current_early_stop_times = 0
 
-    while True:
+    while False:
         np.random.shuffle(shuf_train_ind)
         train_patient_name = train_patient_name[shuf_train_ind]
         for i in range(len(y_train_task)):
@@ -157,7 +157,7 @@ with tf.Session() as sess:
             break
 
     test_auc,test_auc_per_task = test_dev_auc(num_test_batch, y_test_task, test_patient_name, n_test, sess,
-                            input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag=False)
+                            input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag=True)
     logging.info("Test total AUC: {}".format(test_auc))
     logging.info("Test total AUC: {}".format(test_auc_per_task))
 
