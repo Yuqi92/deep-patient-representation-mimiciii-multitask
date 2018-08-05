@@ -333,12 +333,18 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
         pre = pre.reshape(-1, HP.num_classes)  # [3*n_batch,2]  in one batch: task1+task2+task3
         pre = pre[:, 1]  # get probability of positive class
         predictions.extend(pre.tolist())   # task1,2,3_batch1 + task1,2,3_batch2+ task1,2,3_batch3....
-    auc = roc_auc_score(np.asarray(y_total_task_label), np.asarray(predictions))
+    try:
+        auc = roc_auc_score(np.asarray(y_total_task_label), np.asarray(predictions))
+    except:
+        auc = 0.5
 
     if test_output_flag:
         test_output_file = open(HP.test_output, "w")
         for m in range(HP.multi_size):
-            auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
+            try:
+                auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
+            except:
+                auc_per_task[m] = 0.5
             #test_output_file.write("----task----"+str(m)+"\n")
             test_output_file.write("patient_id,true,prediction\n")
             for p in range(len(patient_name)):
