@@ -14,7 +14,7 @@ _ = Embedding.get_embedding()
 
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO, format='%(asctime)s %(message)s')
 
-result_csv = pd.read_csv(HP.result_csv_dead_los)
+result_csv = pd.read_csv(HP.get_result_csv())
 
 # split train test dev
 logging.info('split_train_test_dev')
@@ -108,7 +108,7 @@ with tf.Session() as sess:
     max_auc = 0
     current_early_stop_times = 0
 
-    while False:
+    while not HP.use_everything_to_test:
         np.random.shuffle(shuf_train_ind)
         train_patient_name = train_patient_name[shuf_train_ind]
         for i in range(len(y_train_task)):

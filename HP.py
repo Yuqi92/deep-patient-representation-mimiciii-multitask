@@ -1,17 +1,38 @@
 
+# if we set insight_patient_id to None, it means that we do not want to get insight of patient
+insight_patient_id = "patient19441"
+use_everything_to_test = True
+
 # data
 mimic_note_events = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/NOTEEVENTS.csv'
 mimic_admissions = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/ADMISSIONS.csv'
 mimic_patients = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/PATIENTS.csv'
 
-result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
+#result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
 data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
+insight_patient_data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file_" + insight_patient_id + "/entire_file/"
+
+def get_data_directory():
+    if insight_patient_id is None:
+        return data_directory
+    else:
+        return insight_patient_data_directory
+
 patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_los_6_31_366/"
 
 #result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
 #data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
-result_csv_dead_los = "/data/CNN_mimiciii_mortality_prediction/merged/file/result_csv_dead_los.csv"
-subject_index = "/data/CNN_mimiciii_mortality_prediction/merged/file/subject.csv"
+result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result_csv_dead_los.csv"
+insight_patient_result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file_" + insight_patient_id + "/result_csv_dead_los.csv"
+
+
+def get_result_csv():
+    if insight_patient_id is None:
+        return result_csv
+    else:
+        return insight_patient_result_csv
+
+#subject_index = "/data/CNN_mimiciii_mortality_prediction/merged/file/subject.csv"
 
 index_path = '/data/CNN_mimiciii_mortality_prediction/merged/index'
 #index_path = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/index'
@@ -58,6 +79,7 @@ document_num_filters = 50
 learning_rate = 0.00001
 drop_out_train = 0.8
 
+
 model_type = "CNN"  # can be CNN or SIMPLE
 
 
@@ -73,4 +95,4 @@ model_path = model_folder+ "model.weights/model.ckpt"
 log_file_name = "example.log"
 
 
-test_output = model_folder +'test_error_analysis_single_task_1_year.csv'
+test_output = model_folder +'sentence_error_analysis_single_task_1_year_' + insight_patient_id + '.csv'

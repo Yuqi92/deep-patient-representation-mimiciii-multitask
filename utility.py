@@ -15,7 +15,7 @@ def generate_token_embedding(pid):
                       HP.n_max_word_num,
                       HP.embedding_size], dtype=np.float32)
     current_sentence_ind = 0
-    f = open(HP.data_directory + pid + '.txt')
+    f = open(HP.get_data_directory() + pid + '.txt')
     categories_id_per_file = []
     waiting_for_new_sentence_flag = True
     for line in f:
@@ -50,22 +50,25 @@ def generate_token_embedding(pid):
 
 # split train test dev
 def split_train_test_dev(n_patient):
-    '''
-    if not HP.load_index:
-        index_list = np.arange(n_patient)
-        np.random.shuffle(index_list)
-        n_dev = len(index_list) // 10
-        dev_index = index_list[:n_dev]
-        test_index = index_list[n_dev:(2*n_dev)]
-        train_index = index_list[(2*n_dev):]
-        np.save(HP.index_dev_path, dev_index)
-        np.save(HP.index_test_path, test_index)
-        np.save(HP.index_train_path, train_index)
-    else:'''
-
-    dev_index = np.load(HP.index_dev_path)
-    train_index = np.load(HP.index_train_path)
-    test_index = np.load(HP.index_test_path)
+    if HP.use_everything_to_test:
+        test_index = np.arange(n_patient)
+        dev_index = test_index
+        train_index = test_index
+    # if not HP.load_index:
+    #    index_list = np.arange(n_patient)
+    #    np.random.shuffle(index_list)
+    #    n_dev = len(index_list) // 10
+    #    dev_index = index_list[:n_dev]
+    #    test_index = index_list[n_dev:(2*n_dev)]
+    #    train_index = index_list[(2*n_dev):]
+    #    np.save(HP.index_dev_path, dev_index)
+    #    np.save(HP.index_test_path, test_index)
+    #    np.save(HP.index_train_path, train_index)
+    # else:
+    else:
+        dev_index = np.load(HP.index_dev_path)
+        train_index = np.load(HP.index_train_path)
+        test_index = np.load(HP.index_test_path)
     return train_index, test_index, dev_index
 
 
