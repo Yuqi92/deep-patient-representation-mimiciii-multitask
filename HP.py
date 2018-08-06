@@ -1,6 +1,6 @@
 
 # if we set insight_patient_id to None, it means that we do not want to get insight of patient
-insight_patient_id = "patient19441"
+insight_patient_id = "patient7868"
 use_everything_to_test = True
 
 # data
@@ -55,9 +55,9 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 # mortality task
 
-tasks_dead_date = [366]
+#tasks_dead_date = [366]
 # 20-task
-#tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
+tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
 # 
 #tasks_dead_date = [0, 31, 91, 183, 366]
 # length of stay
@@ -86,7 +86,7 @@ model_type = "CNN"  # can be CNN or SIMPLE
 num_classes = 2
 lambda_regularizer_strength = 5
 
-model_folder = "/data/CNN_mimiciii_mortality_prediction/merged/uni_task_result/one_year_results/model_1/"
+model_folder = "/data/CNN_mimiciii_mortality_prediction/merged/multi_task/result_20_task/model_1/"
 model_path = model_folder+ "model.weights/model.ckpt"
 #model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
@@ -95,4 +95,4 @@ model_path = model_folder+ "model.weights/model.ckpt"
 log_file_name = "example.log"
 
 
-test_output = model_folder +'sentence_error_analysis_single_task_1_year_' + insight_patient_id + '.csv'
+test_output = model_folder +'sentence_error_analysis_multi_20_task_' + insight_patient_id + '.csv'

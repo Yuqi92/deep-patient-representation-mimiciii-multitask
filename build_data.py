@@ -55,11 +55,6 @@ else:
     y_train_task = None
 
 
-logging.info('get files')
-
-# generate mimic embedding
-logging.info('extract mimic')
-
 n_train = len(train_patient_name)
 n_dev = len(dev_patient_name)
 n_test = len(test_patient_name)

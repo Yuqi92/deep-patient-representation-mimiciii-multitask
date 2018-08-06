@@ -328,7 +328,6 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
             pre_pos = pre_slice[:, 1]
             seperate_pre[m].extend(pre_pos.tolist())
 
-
         # get the total predictions for all
         pre = pre.reshape(-1, HP.num_classes)  # [3*n_batch,2]  in one batch: task1+task2+task3
         pre = pre[:, 1]  # get probability of positive class
@@ -345,7 +344,7 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
                 auc_per_task[m] = roc_auc_score(np.asarray(y_seperate_task_label[m]), np.asarray(seperate_pre[m]))
             except:
                 auc_per_task[m] = 0.5
-            #test_output_file.write("----task----"+str(m)+"\n")
+            test_output_file.write("----task----"+str(m)+"\n")
             test_output_file.write("patient_id,true,prediction\n")
             for p in range(len(patient_name)):
                 test_output_file.write(str(patient_name[p]) + "," + str(y_seperate_task_label[m][p]) + "," + str(round(seperate_pre[m][p],4)) + "\n")
