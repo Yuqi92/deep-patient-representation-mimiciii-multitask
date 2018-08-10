@@ -20,8 +20,7 @@ def get_data_directory():
 
 patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_los_6_31_366/"
 
-#result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
-#data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
+
 result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result_csv_dead_los.csv"
 insight_patient_result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file_" + insight_patient_id + "/result_csv_dead_los.csv"
 
@@ -35,7 +34,7 @@ def get_result_csv():
 #subject_index = "/data/CNN_mimiciii_mortality_prediction/merged/file/subject.csv"
 
 index_path = '/data/CNN_mimiciii_mortality_prediction/merged/index'
-#index_path = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/index'
+
 index_train_path = index_path + '/train.npy'
 index_dev_path = index_path + '/dev.npy'
 index_test_path = index_path + '/test.npy'
