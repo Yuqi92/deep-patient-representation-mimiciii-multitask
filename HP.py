@@ -1,6 +1,6 @@
 
 # if we set insight_patient_id to None, it means that we do not want to get insight of patient
-insight_patient_id = "patient7868"
+insight_patient_id = None
 use_everything_to_test = True
 
 # data
