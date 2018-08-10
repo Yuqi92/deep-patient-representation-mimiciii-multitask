@@ -1,5 +1,5 @@
 
-Implementation of Deep Patient Representation of Clinical Notes at Intensive Care Unit forMulti-Task Prediction
+Implementation of Deep Patient Representation of Clinical Notes at Intensive Care Unit for Multi-Task Prediction
 
 Dataset: mimic v1.4 NOTEEVENTS 
 
