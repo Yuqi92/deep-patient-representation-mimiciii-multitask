@@ -4,13 +4,13 @@ insight_patient_id = "patient7868"
 use_everything_to_test = True
 
 # data
-mimic_note_events = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/NOTEEVENTS.csv'
-mimic_admissions = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/ADMISSIONS.csv'
-mimic_patients = '/data/CNN_mimiciii_mortality_prediction/mimic_csv/PATIENTS.csv'
+mimic_note_events = 'mimic_csv/NOTEEVENTS.csv'
+mimic_admissions = 'mimic_csv/ADMISSIONS.csv'
+mimic_patients = 'mimic_csv/PATIENTS.csv'
 
 #result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result.csv"
-data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file/entire_file/"
-insight_patient_data_directory = "/data/CNN_mimiciii_mortality_prediction/merged/file_" + insight_patient_id + "/entire_file/"
+data_directory = "merged/file/entire_file/"
+insight_patient_data_directory = "merged/file_" + insight_patient_id + "/entire_file/"
 
 def get_data_directory():
     if insight_patient_id is None:
@@ -18,12 +18,11 @@ def get_data_directory():
     else:
         return insight_patient_data_directory
 
-patient_vector_directory = "/data/CNN_mimiciii_mortality_prediction/merged/patient_vector/patient_vector_los_6_31_366/"
+patient_vector_directory = "merged/patient_vector/patient_vector_3_task/"
 
-#result_csv = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/result.csv"
-#data_directory = "/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/file/"
-result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file/result_csv_dead_los.csv"
-insight_patient_result_csv = "/data/CNN_mimiciii_mortality_prediction/merged/file_" + insight_patient_id + "/result_csv_dead_los.csv"
+
+result_csv = "merged/file/result_csv_dead_los.csv"
+insight_patient_result_csv = "/merged/file_" + insight_patient_id + "/result_csv_dead_los.csv"
 
 
 def get_result_csv():
@@ -32,10 +31,10 @@ def get_result_csv():
     else:
         return insight_patient_result_csv
 
-#subject_index = "/data/CNN_mimiciii_mortality_prediction/merged/file/subject.csv"
+#subject_index = "/merged/file/subject.csv"
 
-index_path = '/data/CNN_mimiciii_mortality_prediction/merged/index'
-#index_path = '/home/ysi/PycharmProjects/CNN_mimiciii_mortality_prediction/out_hosp/index'
+index_path = 'merged/index'
+
 index_train_path = index_path + '/train.npy'
 index_dev_path = index_path + '/dev.npy'
 index_test_path = index_path + '/test.npy'
@@ -54,12 +53,15 @@ category_id = {cate: idx for idx, cate in enumerate(category)}
 
 
 # mortality task
-
-#tasks_dead_date = [366]
+#single_task
+tasks_dead_date = [366]
 # 20-task
-tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
-# 
-#tasks_dead_date = [0, 31, 91, 183, 366]
+#tasks_dead_date = [0,5,14,31,43,68,103,142,196,269,366,453,573,711,893,1092,1342,1626,1997,2548]
+# 5-task
+#tasks_dead_date = [0, 31, 91, 366, 1095]
+# 3-task
+#tasks_dead_date = [0, 31, 366]
+
 # length of stay
 tasks_los_date = []
 # model
@@ -76,7 +78,8 @@ n_category = len(category)
 dim_category = 10
 document_filter_size = 3
 document_num_filters = 50
-learning_rate = 0.00001
+learning_rate = 0.001
+rate_decay = 0.99
 drop_out_train = 0.8
 
 
@@ -86,7 +89,7 @@ model_type = "CNN"  # can be CNN or SIMPLE
 num_classes = 2
 lambda_regularizer_strength = 5
 
-model_folder = "/data/CNN_mimiciii_mortality_prediction/merged/multi_task/result_20_task/model_1/"
+model_folder = "merged/multi_task/result_3_task/model_1/"
 model_path = model_folder+ "model.weights/model.ckpt"
 #model_path = "merged/multi_task/result_3_task/model_1/model.weights/model.ckpt"
 #out_hosp/results/uni_task_in_month/model_1/model.weights/model.ckpt"
@@ -95,4 +98,11 @@ model_path = model_folder+ "model.weights/model.ckpt"
 log_file_name = "example.log"
 
 
-test_output = model_folder +'sentence_error_analysis_multi_20_task_' + insight_patient_id + '.csv'
+test_output = model_folder +'sentence_error_analysis_single_task_' + insight_patient_id + '.csv'
+
+
+tsne_vector_directory = 'merged/patient_vector/visualization/3_task/vector.npy'
+
+tsne_label_directory = 'merged/patient_vector/visualization/3_task/label.txt'
+
+tensorboard_log = 'project_tensorboard/log'
