@@ -1,10 +1,9 @@
-# CNN_mimiciii_mortality_prediction
 
-Self Implementation of Neural Document Embeddings for Intensive Care Patient Mortality Prediction
+Implementation of Deep Patient Representation of Clinical Notes at Intensive Care Unit for Multi-Task Prediction
 
 Dataset: mimic v1.4 NOTEEVENTS 
 
-Model: Two level Convolutional Neural Network
+Model: Convolutional Neural Network
 
 
 Requirements:
@@ -13,13 +12,7 @@ Requirements:
 
 2. Tensorflow 1.5.0+
 
-Steps:
 
-==> python3 mimic_preprocessing.py
-
-==> python3 truncate_to_sent_length.py
-
-==> nohup python3 build_data.py &
 
 
 Contact: Yuqi Si (Yuqi.Si@uth.tmc.edu)
