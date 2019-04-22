@@ -27,6 +27,8 @@ for i in range(HP.multi_size):
     input_ys.append(tf.placeholder(tf.int32, [None, HP.num_classes], name="input_y"+str(i)))
 category_index = tf.placeholder(tf.int32, [None, HP.max_document_length], name='category_index')
 dropout_keep_prob = tf.placeholder(tf.float32, [], name="dropout_keep_prob")
+
+# return the patient vector
 _, _, patient_vector = CNN_model(input_x, input_ys, sent_length, category_index, dropout_keep_prob)
 
 saver = tf.train.Saver()
