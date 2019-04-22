@@ -12,6 +12,7 @@ from Embedding import Embedding
 
 _ = Embedding.get_embedding()
 
+# log for the project
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO, format='%(asctime)s %(message)s')
 
 result_csv = pd.read_csv(HP.get_result_csv())
@@ -20,7 +21,7 @@ result_csv = pd.read_csv(HP.get_result_csv())
 logging.info('split_train_test_dev')
 train_index, test_index, dev_index = split_train_test_dev(len(result_csv))
 
-
+# get the label for train test and dev
 train_dead_date = result_csv['dead_after_disch_date'].iloc[train_index]
 dev_dead_date = result_csv['dead_after_disch_date'].iloc[dev_index]
 test_dead_date = result_csv['dead_after_disch_date'].iloc[test_index]
@@ -28,7 +29,6 @@ test_dead_date = result_csv['dead_after_disch_date'].iloc[test_index]
 train_los_date = result_csv['length_of_stay'].iloc[train_index]
 dev_los_date = result_csv['length_of_stay'].iloc[dev_index]
 test_los_date = result_csv['length_of_stay'].iloc[test_index]
-
 
 dev_patient_name = np.asarray(result_csv["patient_id"].iloc[dev_index])
 test_patient_name = np.asarray(result_csv["patient_id"].iloc[test_index])  # patient0, patient1, ...
@@ -93,6 +93,7 @@ else:
     scores_soft_max_list = None
 saver = tf.train.Saver()
 
+# start tf
 with tf.Session() as sess:
     if HP.restore:
         saver.restore(sess, HP.model_path)
@@ -139,7 +140,8 @@ with tf.Session() as sess:
         dev_auc,_ = test_dev_auc(num_dev_batch, y_dev_task, dev_patient_name, n_dev, sess,
                                input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag=False)
         logging.info("Dev AUC: {}".format(dev_auc))
-
+        
+        # early stop techniques
         if dev_auc > max_auc:
             save_path = saver.save(sess, HP.model_path)
             logging.info("- new best score!")
@@ -150,7 +152,8 @@ with tf.Session() as sess:
         if current_early_stop_times >= HP.early_stop_times:
             logging.info("- early stopping {} epochs without improvement".format(current_early_stop_times))
             break
-
+    
+    # report the performance on test data
     test_auc,test_auc_per_task = test_dev_auc(num_test_batch, y_test_task, test_patient_name, n_test, sess,
                             input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag=True)
     logging.info("Test total AUC: {}".format(test_auc))
