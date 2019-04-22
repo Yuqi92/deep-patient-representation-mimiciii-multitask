@@ -5,7 +5,9 @@ import glob
 
 from preprocess_utilities import preprocess, split_doc, tokenize
 
+
 def generate_label_3_task(c):
+    """Generate label"""
     if c < 0:
         return 0
     elif (c >= 0 and c < 31):
@@ -14,7 +16,9 @@ def generate_label_3_task(c):
         return 2
     else:
         return 3
+    
 def generate_label_5_task(c):
+    """Generate label"""
     if c < 0:
         return 0
     elif (c >= 0 and c < 31):
@@ -30,6 +34,7 @@ def generate_label_5_task(c):
 
 
 def generate_label_20_task(c):
+    """Generate label"""
     if c < 0:
         return 0
     elif (c >= 0 and c < 5):
@@ -72,7 +77,9 @@ def generate_label_20_task(c):
         return 19
     else:
         return 20
-# generate test patient label
+    
+    
+# generate patient label for visualization
 df_note = pd.read_csv(HP.mimic_note_events)
 admission = pd.read_csv(HP.mimic_admissions)
 patient = pd.read_csv(HP.mimic_patients)
