@@ -1,6 +1,6 @@
 import HP
 import numpy as np
-# generate pre-trained embedding
+# the class is desinged to get pre-trained embedding
 
 
 class Embedding:
@@ -8,12 +8,14 @@ class Embedding:
 
     @staticmethod
     def get_embedding():
+        """Get the embedding."""
         if Embedding.embedding is None:
             Embedding.embedding = Embedding.load_embedding()
         return Embedding.embedding
 
     @staticmethod
     def load_embedding():
+        """Load the embedding from the pretrained file."""
         embedding_file = open(HP.embedding_file)
         embedding_map = {}
         for line in embedding_file:
