@@ -4,13 +4,16 @@ import numpy as np
 import HP
 from tensorflow.contrib.tensorboard.plugins import projector
 
+# run tsne in tensorboard
 
+# patient vector as features
 representation = np.load(HP.tsne_vector_directory)
 
+# label for the vectors
 metadata_path = HP.tsne_label_directory
 
+# checkpoint log
 LOG_DIR = HP.tensorboard_log
-
 
 representation_var = tf.Variable(representation,name='representation')
 
