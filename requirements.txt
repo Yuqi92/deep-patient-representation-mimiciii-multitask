@@ -1,8 +1,8 @@
 tensorflow==1.4.0
 tensorflow-gpu==1.4.0
-numpy==1.14.0
+numpy==1.15.2
 logging==3.6
-pandas==0.24.1
-tqdm==4.31.1
-tensorboard==1.4.0
-scipy==1.1.0
+pandas==0.20.3
+tqdm==4.23.4
+tensorflow-tensorboard==0.4.0
+scikit-learn=0.19.1
