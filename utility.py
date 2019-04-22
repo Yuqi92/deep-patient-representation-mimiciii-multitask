@@ -6,11 +6,20 @@ import logging
 from Embedding import Embedding
 from multiprocessing import Pool
 
-
+# log for the project
 logging.basicConfig(filename=HP.log_file_name, level=logging.INFO, format='%(asctime)s %(message)s')
 
 
 def generate_token_embedding(pid):
+    """Preprocessing the note and generate embedding for each word in the sentences
+    
+    Args:
+        pid: patient id
+    return: 
+        x_doc: 3d embedding
+        number_of_sentences: seq length
+        categories_id_per_file: category of note
+    """
     x_doc = np.zeros([HP.n_max_sentence_num,
                       HP.n_max_word_num,
                       HP.embedding_size], dtype=np.float32)
@@ -48,8 +57,13 @@ def generate_token_embedding(pid):
     return x_doc, number_of_sentences, categories_id_per_file
 
 
-# split train test dev
 def split_train_test_dev(n_patient):
+    """Split the data into three subsets.
+       Args:
+            n_patient: the number of sample
+       return:
+            the index for each subset
+    """
     if HP.use_everything_to_test:
         test_index = np.arange(n_patient)
         dev_index = test_index
@@ -73,6 +87,7 @@ def split_train_test_dev(n_patient):
 
 
 def generate_label_from_date(y_dead_series,y_los_series):
+    """Generate the classification label"""
     labels = []
     for dead_date in HP.tasks_dead_date:
         label = []
@@ -96,6 +111,7 @@ def generate_label_from_date(y_dead_series,y_los_series):
     return labels
 
 def generate_label_from_dead_date(y_series):
+    """Generate the classification label"""
     labels = []
     for dead_date in HP.tasks_dead_date:
         label = []
@@ -109,6 +125,7 @@ def generate_label_from_dead_date(y_series):
     return labels
 
 def generate_label_from_los_date(y_series):
+    """Generate the classification label"""
     labels = []
     for dead_date in HP.tasks_los_date:
         label = []
@@ -123,6 +140,7 @@ def generate_label_from_los_date(y_series):
 
 
 def simple_model(input_x, input_ys):
+    """Feedforward neural network architecture"""
     # input_x : n_batch * document_filter_size
     total_loss = 0
     scores_soft_max_list = []
@@ -163,8 +181,9 @@ def simple_model(input_x, input_ys):
 
 
 
-# CNN model architecture
 def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
+    """Two-level CNN architecture"""
+    
     # category lookup
     target_embeddings = tf.get_variable(
                         name="target_embeddings",
@@ -289,6 +308,8 @@ def CNN_model(input_x,input_ys, sent_length, category_index, dropout_keep_prob):
 
 def test_dev_auc(num_batch, y_task, patient_name, n, sess,
                  input_x, sent_length, category_index, dropout_keep_prob, scores_soft_max_list, test_output_flag):
+    """Calculate AUC for the trained model on test and dev datasets"""
+    
     y_total_task_label = []
     predictions = []
 
@@ -355,6 +376,7 @@ def test_dev_auc(num_batch, y_task, patient_name, n, sess,
 
 
 def load_x_data_for_cnn(patient_name, keep_prob, input_x, sent_length, category_index, dropout_keep_prob):
+    """Multiprocessing to fast speed"""
     pool = Pool(processes=HP.read_data_thread_num)
     generate_token_embedding_results = pool.map(generate_token_embedding, patient_name)
     pool.close()
@@ -381,6 +403,7 @@ def load_x_data_for_cnn(patient_name, keep_prob, input_x, sent_length, category_
 
 
 def load_x_data_for_simple(patient_name, input_x):
+    """Load the trained patient vector for FNN model"""
     p_vector_list = []
     for p in patient_name:
         p_np = np.load(HP.patient_vector_directory + p + ".npy")
