@@ -84,14 +84,14 @@ Please make sure your directories/files are satisfied the following structure be
 ├── data
 │   ├── index
 │   ├── processed_note_file
-|   │   ├── p1,p2...p_n.txt
-|   │   └──  label.txt
+│   │   ├── p1,p2...p_n.txt
+│   │   └──  label.txt
 ├── results
 │   └── models
 ├── mimic_csv
-|   │   ├── NOTEEVENTS.csv
-|   │   ├── ADMISSIONS.csv
-|   │   └── PATIENTS.csv
+│   │   ├── NOTEEVENTS.csv
+│   │   ├── ADMISSIONS.csv
+│   │   └── PATIENTS.csv
 ├── pre-trained_embedding
 │   └──  w2v_mimic.txt
 ├── tensorboard_tsne
