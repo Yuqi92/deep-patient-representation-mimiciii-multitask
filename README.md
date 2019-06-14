@@ -211,6 +211,20 @@ The performance is evaluated on AUROC score.
  <p align="center"><img src="./tsne.png" alt="tSNE visualization of 3-task patient distributed representation." width="700"></p>
 
 
+## Citing NCBI BERT
+
+*  Si, Y., Roberts, K., 2019. Deep Patient Representation of Clinical Notes via Multi-Task Learning for Mortality Prediction. AMIA Summits on Translational Science Proceedings, 2019.
+
+```
+@article{si2019deep,
+  title={Deep Patient Representation of Clinical Notes via Multi-Task Learning for Mortality Prediction},
+  author={Si, Yuqi and Roberts, Kirk},
+  journal={AMIA Summits on Translational Science Proceedings},
+  volume={2018},
+  publisher={American Medical Informatics Association}
+}
+```
+
 
 
 
