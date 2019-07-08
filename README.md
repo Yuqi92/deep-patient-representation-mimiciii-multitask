@@ -213,16 +213,19 @@ The performance is evaluated on AUROC score.
 
 ## Citing
 
-*  Si, Y., Roberts, K., 2019. Deep Patient Representation of Clinical Notes via Multi-Task Learning for Mortality Prediction. AMIA Summits on Translational Science Proceedings, 2019.
+*  Si, Yuqi, and Kirk Roberts. "Deep Patient Representation of Clinical Notes via Multi-Task Learning for Mortality Prediction." AMIA Summits on Translational Science Proceedings 2019 (2019): 779.
 
 ```
 @article{si2019deep,
   title={Deep Patient Representation of Clinical Notes via Multi-Task Learning for Mortality Prediction},
   author={Si, Yuqi and Roberts, Kirk},
   journal={AMIA Summits on Translational Science Proceedings},
-  volume={2018},
+  volume={2019},
+  pages={779},
+  year={2019},
   publisher={American Medical Informatics Association}
 }
+
 ```
 
 
