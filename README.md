@@ -2,7 +2,7 @@
 
 We developed a deep learning-based model for multi-task learning task from ICU patient clinical notes to predict patient mortality and length of stay. 
 
-This repository contains the code for this project, also contains the [slide](https://github.com/Yuqi92/deep-patient-representation-mimiciii-multitask/blob/master/slide_YS.pptx) and the [paper](https://github.com/Yuqi92/deep-patient-representation-mimiciii-multitask/blob/master/paper.pdf) for more details.
+This repository contains the code for this project, also contains the [slide](https://github.com/Yuqi92/deep-patient-representation-mimiciii-multitask/blob/master/slide_YS.pptx) and the [paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6568068/) for more details.
 
 Clinical notes are fetched from a public ICU patient database, also known as MIMIC-III. For more information, like how to get access to the data, please refer to [MIMIC Critical Care Database](https://mimic.physionet.org/gettingstarted/access/).
 
